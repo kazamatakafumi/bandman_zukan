@@ -380,7 +380,12 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
         <video id="scanVideo" playsinline muted></video>
         <div class="scan-frame"></div>
       </div>
-      <p class="scan-msg" id="scanMsg">カメラを　じゅんびしています…</p>
+      <p class="scan-msg" id="scanMsg">QRコードを枠に合わせてね 📷</p>
+      <div class="row-btns mt14">
+        <button class="btn ghost" id="btnTorch" style="width:auto; padding:12px 16px;">🔦 ライト</button>
+        <button class="btn ghost" id="btnPhotoScan" style="flex:1;">🖼️ 画像から読む</button>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none;">
       <div class="mt14">
         <button class="btn ghost" id="btnMasterList">🎫 バンドマンQR一覧をひらく（テスト用）</button>
       </div>
@@ -794,27 +799,38 @@ document.getElementById('closeInsectModal').addEventListener('click', ()=>{
 /* =========================================================
    6. カメラ・QRスキャン共通処理
    ========================================================= */
-const scanners = {}; // {catch:{stream,raf,video,canvas,ctx,cooldown}, trade:{...}}
+const scanners = {}; // {catch:{stream,raf,video,canvas,ctx,cooldown,lastTick}, trade:{...}}
 
 function startScanner(mode){
   const videoEl = mode==='catch' ? document.getElementById('scanVideo') : document.getElementById('tradeScanVideo');
   if(!videoEl) return;
-  if(scanners[mode] && scanners[mode].stream) return; // already running
+  if(scanners[mode] && scanners[mode].stream) return;
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+  // より高精細・高フレームレートのカメラ設定
+  const constraints = {
+    video: {
+      facingMode: { ideal: 'environment' },
+      width:  { ideal: 1280 },
+      height: { ideal: 720 },
+      focusMode: { ideal: 'continuous' },
+      zoom: { ideal: 1 }
+    }
+  };
+
+  navigator.mediaDevices.getUserMedia(constraints)
     .then(stream=>{
       videoEl.srcObject = stream;
       videoEl.setAttribute('playsinline', true);
       videoEl.play();
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently:true });
-      scanners[mode] = { stream, video: videoEl, canvas, ctx, cooldown:false };
-      if(mode==='catch') setScanMsg('バンドマンをさがしています…');
+      scanners[mode] = { stream, video: videoEl, canvas, ctx, cooldown:false, lastTick:0 };
+      if(mode==='catch') setScanMsg('QRコードを枠に合わせてね 📷');
       tickScanner(mode);
     })
     .catch(err=>{
       console.error(err);
-      if(mode==='catch') setScanMsg('カメラを使えませんでした。ブラウザの設定でカメラの許可をONにしてください。');
+      if(mode==='catch') setScanMsg('カメラが起動できませんでした。ブラウザのカメラ許可をONにするか、下の「画像で読む」ボタンをお試しください。');
     });
 }
 function stopScanner(mode){
@@ -828,19 +844,65 @@ function tickScanner(mode){
   const s = scanners[mode];
   if(!s) return;
   const { video, canvas, ctx } = s;
-  if(video.readyState === video.HAVE_ENOUGH_DATA && !s.cooldown){
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const now = performance.now();
+  // 150ms間隔でスキャン（毎フレームはCPU過負荷になりやすい）
+  if(now - s.lastTick > 150 && video.readyState === video.HAVE_ENOUGH_DATA && !s.cooldown){
+    s.lastTick = now;
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if(!vw || !vh){ s.raf = requestAnimationFrame(()=>tickScanner(mode)); return; }
+
+    // 中央の正方形だけ切り取る（QRは中央に向けてもらうため）
+    const sz = Math.min(vw, vh) * 0.85;
+    const sx = (vw - sz) / 2, sy = (vh - sz) / 2;
+    canvas.width = canvas.height = Math.round(sz);
+    ctx.drawImage(video, sx, sy, sz, sz, 0, 0, canvas.width, canvas.height);
+
+    // コントラスト強化で検出率UP
+    ctx.filter = 'contrast(1.4) brightness(1.05)';
+    ctx.drawImage(canvas, 0, 0);
+    ctx.filter = 'none';
+
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imgData.data, imgData.width, imgData.height);
+    const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
     if(code && code.data){
       s.cooldown = true;
+      if(navigator.vibrate) navigator.vibrate(80);
       onQRDetected(code.data, mode);
     }
   }
   s.raf = requestAnimationFrame(()=>tickScanner(mode));
 }
+
+// 画像ファイルからQRを読む（カメラが使えない場合のフォールバック）
+function scanFromFile(file, mode){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const img = new window.Image();
+    img.onload = ()=>{
+      const sz = Math.max(img.width, img.height);
+      const c = document.createElement('canvas');
+      c.width = c.height = sz;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, (sz-img.width)/2, (sz-img.height)/2);
+      // コントラスト強化
+      ctx.filter = 'contrast(1.5) brightness(1.1)';
+      ctx.drawImage(c, 0, 0);
+      ctx.filter = 'none';
+      const imgData = ctx.getImageData(0, 0, sz, sz);
+      const code = jsQR(imgData.data, sz, sz, { inversionAttempts: 'attemptBoth' });
+      if(code && code.data){
+        if(navigator.vibrate) navigator.vibrate(80);
+        onQRDetected(code.data, mode);
+      } else {
+        if(mode==='catch') setScanMsg('QRコードが読み取れませんでした。別の画像か、カメラで試してみてね。');
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function setScanMsg(msg){
   const el = document.getElementById('scanMsg');
   if(el) el.textContent = msg;
@@ -1125,6 +1187,30 @@ document.getElementById('btnRegisterBand').addEventListener('click', ()=>{
 /* =========================================================
    11. バンドマンQR一覧（マスターQR生成・印刷/テスト用）
    ========================================================= */
+// ライトON/OFFトグル
+let torchOn = false;
+document.getElementById('btnTorch').addEventListener('click', ()=>{
+  const s = scanners['catch'];
+  if(!s || !s.stream) return;
+  const track = s.stream.getVideoTracks()[0];
+  if(!track) return;
+  torchOn = !torchOn;
+  track.applyConstraints({ advanced: [{ torch: torchOn }] }).catch(()=>{
+    setScanMsg('このデバイスはライト機能に対応していません');
+  });
+  document.getElementById('btnTorch').textContent = torchOn ? '🔦 ライトOFF' : '🔦 ライト';
+});
+
+// 画像ファイルからスキャン
+document.getElementById('btnPhotoScan').addEventListener('click', ()=>{
+  document.getElementById('photoInput').click();
+});
+document.getElementById('photoInput').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(file) scanFromFile(file, 'catch');
+  e.target.value = '';
+});
+
 document.getElementById('btnMasterList').addEventListener('click', ()=>{
   const grid = document.getElementById('masterListGrid');
   if(grid.childElementCount === 0){
