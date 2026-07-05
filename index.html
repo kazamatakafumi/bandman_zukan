@@ -799,103 +799,111 @@ document.getElementById('closeInsectModal').addEventListener('click', ()=>{
 /* =========================================================
    6. カメラ・QRスキャン共通処理
    ========================================================= */
-const scanners = {}; // {catch:{stream,raf,video,canvas,ctx,cooldown,lastTick}, trade:{...}}
+const scanners = {};
 
 function startScanner(mode){
   const videoEl = mode==='catch' ? document.getElementById('scanVideo') : document.getElementById('tradeScanVideo');
   if(!videoEl) return;
   if(scanners[mode] && scanners[mode].stream) return;
 
-  // より高精細・高フレームレートのカメラ設定
-  const constraints = {
-    video: {
-      facingMode: { ideal: 'environment' },
-      width:  { ideal: 1280 },
-      height: { ideal: 720 },
-      focusMode: { ideal: 'continuous' },
-      zoom: { ideal: 1 }
-    }
-  };
-
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(stream=>{
-      videoEl.srcObject = stream;
-      videoEl.setAttribute('playsinline', true);
-      videoEl.play();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently:true });
-      scanners[mode] = { stream, video: videoEl, canvas, ctx, cooldown:false, lastTick:0 };
-      if(mode==='catch') setScanMsg('QRコードを枠に合わせてね 📷');
-      tickScanner(mode);
-    })
-    .catch(err=>{
-      console.error(err);
-      if(mode==='catch') setScanMsg('カメラが起動できませんでした。ブラウザのカメラ許可をONにするか、下の「画像で読む」ボタンをお試しください。');
-    });
+  // iOSはwidth/height/focusModeを嫌うのでfacingModeだけ指定
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' } }
+  })
+  .then(stream=>{
+    videoEl.srcObject = stream;
+    videoEl.setAttribute('playsinline', true);
+    videoEl.setAttribute('autoplay', true);
+    videoEl.play();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    scanners[mode] = { stream, video: videoEl, canvas, ctx, cooldown: false, timer: null };
+    if(mode==='catch') setScanMsg('QRコードを枠の中に合わせてね');
+    schedTick(mode);
+  })
+  .catch(err=>{
+    console.error(err);
+    if(mode==='catch') setScanMsg('カメラが起動できませんでした。Safariの設定→このサイト→カメラを「許可」にしてください。');
+  });
 }
+
 function stopScanner(mode){
   const s = scanners[mode];
   if(!s) return;
-  if(s.raf) cancelAnimationFrame(s.raf);
+  if(s.timer) clearTimeout(s.timer);
   if(s.stream) s.stream.getTracks().forEach(t=>t.stop());
   scanners[mode] = null;
 }
-function tickScanner(mode){
+
+function schedTick(mode){
   const s = scanners[mode];
   if(!s) return;
-  const { video, canvas, ctx } = s;
-  const now = performance.now();
-  // 150ms間隔でスキャン（毎フレームはCPU過負荷になりやすい）
-  if(now - s.lastTick > 150 && video.readyState === video.HAVE_ENOUGH_DATA && !s.cooldown){
-    s.lastTick = now;
-    const vw = video.videoWidth, vh = video.videoHeight;
-    if(!vw || !vh){ s.raf = requestAnimationFrame(()=>tickScanner(mode)); return; }
-
-    // 中央の正方形だけ切り取る（QRは中央に向けてもらうため）
-    const sz = Math.min(vw, vh) * 0.85;
-    const sx = (vw - sz) / 2, sy = (vh - sz) / 2;
-    canvas.width = canvas.height = Math.round(sz);
-    ctx.drawImage(video, sx, sy, sz, sz, 0, 0, canvas.width, canvas.height);
-
-    // コントラスト強化で検出率UP
-    ctx.filter = 'contrast(1.4) brightness(1.05)';
-    ctx.drawImage(canvas, 0, 0);
-    ctx.filter = 'none';
-
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
-    if(code && code.data){
-      s.cooldown = true;
-      if(navigator.vibrate) navigator.vibrate(80);
-      onQRDetected(code.data, mode);
-    }
-  }
-  s.raf = requestAnimationFrame(()=>tickScanner(mode));
+  s.timer = setTimeout(()=>{ tickScanner(mode); schedTick(mode); }, 200);
 }
 
-// 画像ファイルからQRを読む（カメラが使えない場合のフォールバック）
+function tickScanner(mode){
+  const s = scanners[mode];
+  if(!s || s.cooldown) return;
+  const { video, canvas, ctx } = s;
+  if(video.readyState < 2 || !video.videoWidth) return;
+
+  const vw = video.videoWidth, vh = video.videoHeight;
+  // 全体をキャプチャ（iOSはクロップすると検出率が下がるため）
+  canvas.width = vw;
+  canvas.height = vh;
+  ctx.drawImage(video, 0, 0, vw, vh);
+
+  let imgData = ctx.getImageData(0, 0, vw, vh);
+
+  // iOS Safari対応：canvas.filterが使えないので手動でコントラスト調整
+  const d = imgData.data;
+  const factor = 1.4;
+  const intercept = 128 * (1 - factor);
+  for(let i = 0; i < d.length; i += 4){
+    d[i]   = Math.min(255, Math.max(0, d[i]   * factor + intercept));
+    d[i+1] = Math.min(255, Math.max(0, d[i+1] * factor + intercept));
+    d[i+2] = Math.min(255, Math.max(0, d[i+2] * factor + intercept));
+  }
+  ctx.putImageData(imgData, 0, 0);
+  imgData = ctx.getImageData(0, 0, vw, vh);
+
+  const code = jsQR(imgData.data, vw, vh, { inversionAttempts: 'attemptBoth' });
+  if(code && code.data){
+    s.cooldown = true;
+    if(navigator.vibrate) navigator.vibrate(80);
+    onQRDetected(code.data, mode);
+  }
+}
+
+// 画像ファイルからQRを読む
 function scanFromFile(file, mode){
   if(!file) return;
+  setScanMsg('画像を解析中…');
   const reader = new FileReader();
   reader.onload = e=>{
     const img = new window.Image();
     img.onload = ()=>{
-      const sz = Math.max(img.width, img.height);
       const c = document.createElement('canvas');
-      c.width = c.height = sz;
+      c.width = img.width; c.height = img.height;
       const ctx = c.getContext('2d');
-      ctx.drawImage(img, (sz-img.width)/2, (sz-img.height)/2);
-      // コントラスト強化
-      ctx.filter = 'contrast(1.5) brightness(1.1)';
-      ctx.drawImage(c, 0, 0);
-      ctx.filter = 'none';
-      const imgData = ctx.getImageData(0, 0, sz, sz);
-      const code = jsQR(imgData.data, sz, sz, { inversionAttempts: 'attemptBoth' });
+      ctx.drawImage(img, 0, 0);
+      let imgData = ctx.getImageData(0, 0, c.width, c.height);
+      // 手動コントラスト（iOS対応）
+      const d = imgData.data;
+      const factor = 1.5, intercept = 128 * (1 - factor);
+      for(let i = 0; i < d.length; i += 4){
+        d[i]   = Math.min(255, Math.max(0, d[i]   * factor + intercept));
+        d[i+1] = Math.min(255, Math.max(0, d[i+1] * factor + intercept));
+        d[i+2] = Math.min(255, Math.max(0, d[i+2] * factor + intercept));
+      }
+      ctx.putImageData(imgData, 0, 0);
+      imgData = ctx.getImageData(0, 0, c.width, c.height);
+      const code = jsQR(imgData.data, c.width, c.height, { inversionAttempts: 'attemptBoth' });
       if(code && code.data){
         if(navigator.vibrate) navigator.vibrate(80);
         onQRDetected(code.data, mode);
       } else {
-        if(mode==='catch') setScanMsg('QRコードが読み取れませんでした。別の画像か、カメラで試してみてね。');
+        setScanMsg('読み取れませんでした。QRコードが鮮明に写っているか確認してください。');
       }
     };
     img.src = e.target.result;
