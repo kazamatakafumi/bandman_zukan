@@ -9,8 +9,8 @@
 
 <!-- QRコードを読み取るためのライブラリ(jsQR) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
-<!-- QRコードを生成するためのライブラリ(qrcodejs) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- QRコードを生成するためのライブラリ(qrcode.js by soldair - canvasベースで安定動作) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js"></script>
 <!-- みんなの図鑑を共有するためのFirebase(クラウド保存・ランキング用) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -137,19 +137,26 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
   border:1.5px solid var(--line);
   border-top:5px solid var(--line);
   border-radius:12px;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:6px 4px 4px;
   box-shadow:var(--shadow);
 }
 .zukan-cell .no{
-  position:absolute; top:4px; left:6px; font-size:9px; font-weight:900; color:var(--ink-soft);
+  position:absolute; top:4px; left:6px; font-size:9px; font-weight:900; color:var(--ink-soft); z-index:2;
 }
-.zukan-cell .icon{font-size:40px; line-height:1; margin-bottom:4px;}
-.zukan-cell .icon img{width:48px; height:48px; object-fit:contain; display:block;}
-.zukan-cell .nm{font-size:9.5px; font-weight:900; text-align:center; line-height:1.25; color:var(--ink);}
-.zukan-cell .cnt{position:absolute; bottom:4px; right:6px; font-size:11.5px; font-weight:900; color:var(--pink);}
+.zukan-cell .icon{
+  position:absolute; left:0; right:0; top:12px; bottom:26px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:40px; line-height:1; z-index:1;
+}
+.zukan-cell .icon img{width:62px; height:62px; object-fit:contain; display:block;}
+.zukan-cell .nm{
+  position:absolute; left:4px; right:4px; top:66%; transform:translateY(-50%);
+  font-size:9.5px; font-weight:900; text-align:center; line-height:1.25; color:var(--ink);
+  z-index:2;
+}
+.zukan-cell .cnt{position:absolute; bottom:4px; right:6px; font-size:14px; font-weight:900; color:var(--pink); z-index:2;}
 .zukan-cell.locked{opacity:.75; border-top-style:dashed; border-top-color:var(--muted);}
-.zukan-cell.locked .nm{color:var(--ink-soft);}
+.zukan-cell.locked .nm{color:#6c5c82;}
 .zukan-cell[data-rarity="R"]:not(.locked){border-top-color:var(--sky);}
 .zukan-cell[data-rarity="SR"]:not(.locked){border-top-color:var(--mint);}
 .zukan-cell[data-rarity="UR"]:not(.locked){border-top-color:var(--pink);}
@@ -172,6 +179,10 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
 .rarity-tag.SP{
   background:linear-gradient(90deg,var(--gold),var(--pink),var(--purple),var(--gold));
   background-size:300% 100%; animation:holoShift 3s linear infinite;
+}
+.part-tag{
+  display:inline-block; font-size:10px; font-weight:900; padding:3px 10px; border-radius:999px;
+  color:var(--ink); background:#fff; border:1.5px solid var(--line); margin-left:6px;
 }
 
 /* ---------- モーダル ---------- */
@@ -491,6 +502,7 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
     <div class="small" id="modalNo">No.001</div>
     <h2 id="modalName">？？？</h2>
     <span class="rarity-tag N" id="modalRarity">N</span>
+    <span class="part-tag" id="modalPart"></span>
     <div class="big-icon" id="modalIcon">🎤</div>
     <p class="lead" id="modalDesc"></p>
     <p class="small" id="modalHabitat"></p>
@@ -564,6 +576,7 @@ const CUSTOM_BANDMEN = {
     name: 'ハチミツタカフミ',
     img: IMG_HACHIMITSU_TAKAFUMI,
     habitat: '花畑のどこか',
+    band: '3markets[ ]',
     desc: 'はちみつの匂いがする、伝説のミツバチ系ボーカル。花畑のどこかで気ままに歌っているらしい。'
   }
 };
@@ -579,7 +592,7 @@ function buildBandmen(){
       const id   = 'z' + String(idx+1).padStart(2,'0');
       list.push({
         id, name: mod + role.name, emoji: role.emoji, hue, rarity: plan.tier,
-        habitat: role.spot,
+        habitat: role.spot, part: role.name, band: 'ソロ活動',
         desc: `${role.spot}に出没するらしい、${mod}${role.name}。`
       });
       idx++;
@@ -588,7 +601,7 @@ function buildBandmen(){
   // シークレットの1体（手作り・ちょっとした遊び心）
   list.push({
     id:'z50', name:'伝説のウナギボーカル', emoji:'🧑‍🎤', hue:0, rarity:'SP',
-    habitat:'だれも見たことがない場所',
+    habitat:'だれも見たことがない場所', part:'ボーカル', band:'ソロ活動',
     desc:'ヌルヌルした喉ごしの歌声で、客を逃さないと噂の伝説のボーカル。楽屋でよく鰻を食べているらしい。'
   });
   // カスタムデータで上書き（名前・画像・説明文などを差し替え）
@@ -762,7 +775,7 @@ function renderZukanGrid(){
     cell.dataset.rarity = bm.rarity;
     const iconStyle = owned
       ? (bm.img ? '' : `filter:hue-rotate(${bm.hue}deg)`)
-      : 'filter:brightness(0) opacity(.5);';
+      : 'filter:brightness(0) opacity(.3);';
     const iconContent = bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji;
     cell.innerHTML = `
       <div class="no">No.${String(i+1).padStart(2,'0')}</div>
@@ -785,11 +798,12 @@ function openInsectModal(id){
   const rt = document.getElementById('modalRarity');
   rt.textContent = RARITY_LABEL[bm.rarity];
   rt.className = 'rarity-tag ' + bm.rarity;
+  document.getElementById('modalPart').textContent = owned ? bm.part : '';
   const icon = document.getElementById('modalIcon');
   icon.innerHTML = bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji;
-  icon.style.filter = owned ? (bm.img ? 'none' : `hue-rotate(${bm.hue}deg)`) : 'brightness(0) opacity(.5)';
+  icon.style.filter = owned ? (bm.img ? 'none' : `hue-rotate(${bm.hue}deg)`) : 'brightness(0) opacity(.3)';
   document.getElementById('modalDesc').textContent = owned ? bm.desc : 'まだ みつけていない バンドマンです。QRコードを さがしてみよう。';
-  document.getElementById('modalHabitat').textContent = owned ? ('出没スポット：' + bm.habitat) : '';
+  document.getElementById('modalHabitat').textContent = owned ? ('所属バンド：' + (bm.band || 'ソロ活動')) : '';
   document.getElementById('modalCount').textContent = owned ? ('つかまえた数：' + state.collection[id] + ' 枚') : '';
   document.getElementById('insectModal').classList.add('show');
 }
@@ -1052,7 +1066,7 @@ function renderTradeSelect(){
   owned.forEach(bm=>{
     const opt = document.createElement('option');
     opt.value = bm.id;
-    opt.textContent = `${bm.name}（×${state.collection[bm.id]}）`;
+    opt.textContent = bm.name;
     sel.appendChild(opt);
   });
   generateTradeQR(sel.value);
@@ -1063,20 +1077,21 @@ document.getElementById('tradeSelect').addEventListener('change', e=>generateTra
 // 失敗していたら別CDNから読み込み直す
 let qrLibLoadPromise = null;
 function ensureQRCodeLib(){
-  if(typeof QRCode !== 'undefined') return Promise.resolve();
+  const ready = ()=> typeof QRCode !== 'undefined' && typeof QRCode.toCanvas === 'function';
+  if(ready()) return Promise.resolve();
   if(qrLibLoadPromise) return qrLibLoadPromise;
   const fallbackUrls = [
-    'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
-    'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js'
+    'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+    'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js'
   ];
   qrLibLoadPromise = new Promise((resolve, reject)=>{
     let i = 0;
     function tryNext(){
-      if(typeof QRCode !== 'undefined'){ resolve(); return; }
+      if(ready()){ resolve(); return; }
       if(i >= fallbackUrls.length){ reject(new Error('QRCode lib failed to load from all sources')); return; }
       const s = document.createElement('script');
       s.src = fallbackUrls[i++];
-      s.onload = ()=>{ if(typeof QRCode !== 'undefined') resolve(); else tryNext(); };
+      s.onload = ()=>{ if(ready()) resolve(); else tryNext(); };
       s.onerror = tryNext;
       document.head.appendChild(s);
     }
@@ -1090,15 +1105,23 @@ function generateTradeQR(insectId){
   box.innerHTML = '<div class="small">QRコードを準備中…</div>';
   if(!insectId) return;
   ensureQRCodeLib().then(()=>{
-    box.innerHTML = '';
     const payload = JSON.stringify({
       type:'trade', id: insectId, from: state.nickname || '名無しのヲタク', ts: Date.now()
     });
-    new QRCode(box, { text: payload, width: 200, height: 200, colorDark:'#4a3b57', colorLight:'#ffffff' });
-    const cap = document.createElement('div');
-    cap.className = 'small mt8';
-    cap.textContent = '相手にこの画面を見せて、カメラで読み取ってもらってね';
-    box.appendChild(cap);
+    const canvas = document.createElement('canvas');
+    QRCode.toCanvas(canvas, payload, { width: 200, margin: 1, color: { dark:'#4a3b57', light:'#ffffff' } }, err=>{
+      if(err){
+        console.error('QR generate error', err);
+        box.innerHTML = '<div class="small">QRコードの生成に失敗しました。もう一度お試しください。</div>';
+        return;
+      }
+      box.innerHTML = '';
+      box.appendChild(canvas);
+      const cap = document.createElement('div');
+      cap.className = 'small mt8';
+      cap.textContent = '相手にこの画面を見せて、カメラで読み取ってもらってね';
+      box.appendChild(cap);
+    });
   }).catch(()=>{
     box.innerHTML = '<div class="small">QRコードの読み込みに失敗しました。通信状況を確認して、画面を下に引っぱって更新してみてください。</div>';
   });
@@ -1313,7 +1336,11 @@ document.getElementById('btnMasterList').addEventListener('click', ()=>{
       label.textContent = `No.${String(i+1).padStart(2,'0')} ${bm.name}`;
       cell.appendChild(label);
       grid.appendChild(cell);
-      new QRCode(qrHolder, { text: 'BANDZUKAN:'+bm.id, width: 110, height: 110, colorDark:'#4a3b57', colorLight:'#ffffff' });
+      const canvas = document.createElement('canvas');
+      qrHolder.appendChild(canvas);
+      QRCode.toCanvas(canvas, 'BANDZUKAN:'+bm.id, { width: 110, margin: 1, color: { dark:'#4a3b57', light:'#ffffff' } }, err=>{
+        if(err) console.error('master QR generate error', err);
+      });
     });
   }).catch(()=>{
     grid.innerHTML = '<p class="small">QRコードの読み込みに失敗しました。通信状況を確認して、画面を下に引っぱって更新してみてください。</p>';
