@@ -801,14 +801,44 @@ document.getElementById('closeInsectModal').addEventListener('click', ()=>{
    ========================================================= */
 const scanners = {};
 
+// jsQRがCDNから読み込めているか確認し、失敗していたら別CDNから読み込み直す
+// （読み込み失敗時に何も表示されず無反応になるのを防ぐため）
+let jsQRLoadPromise = null;
+function ensureJsQR(){
+  if(typeof jsQR !== 'undefined') return Promise.resolve();
+  if(jsQRLoadPromise) return jsQRLoadPromise;
+  const fallbackUrls = [
+    'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
+    'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js'
+  ];
+  jsQRLoadPromise = new Promise((resolve, reject)=>{
+    let i = 0;
+    function tryNext(){
+      if(typeof jsQR !== 'undefined'){ resolve(); return; }
+      if(i >= fallbackUrls.length){ reject(new Error('jsQR failed to load from all sources')); return; }
+      const s = document.createElement('script');
+      s.src = fallbackUrls[i++];
+      s.onload = ()=>{ if(typeof jsQR !== 'undefined') resolve(); else tryNext(); };
+      s.onerror = tryNext;
+      document.head.appendChild(s);
+    }
+    tryNext();
+  });
+  return jsQRLoadPromise;
+}
+
 function startScanner(mode){
   const videoEl = mode==='catch' ? document.getElementById('scanVideo') : document.getElementById('tradeScanVideo');
   if(!videoEl) return;
   if(scanners[mode] && scanners[mode].stream) return;
 
-  // iOSはwidth/height/focusModeを嫌うのでfacingModeだけ指定
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: 'environment' } }
+  if(mode==='catch') setScanMsg('QRリーダーを準備しています…');
+
+  ensureJsQR().then(()=>{
+    // iOSはwidth/height/focusModeを嫌うのでfacingModeだけ指定
+    return navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }
+    });
   })
   .then(stream=>{
     videoEl.srcObject = stream;
@@ -823,7 +853,12 @@ function startScanner(mode){
   })
   .catch(err=>{
     console.error(err);
-    if(mode==='catch') setScanMsg('カメラが起動できませんでした。Safariの設定→このサイト→カメラを「許可」にしてください。');
+    if(mode!=='catch') return;
+    if(err && err.message === 'jsQR failed to load from all sources'){
+      setScanMsg('QR読み取り機能の読み込みに失敗しました。通信状況を確認して、画面を下に引っぱって更新してみてください。');
+    } else {
+      setScanMsg('カメラが起動できませんでした。Safariの設定→このサイト→カメラを「許可」にしてください。');
+    }
   });
 }
 
@@ -854,6 +889,11 @@ function tickScanner(mode){
   const { video, ctx, canvas } = s;
   if(video.readyState < 2 || !video.videoWidth) return;
 
+  if(typeof jsQR === 'undefined'){
+    if(mode==='catch') setScanMsg('QR読み取り機能が読み込めていません。画面を下に引っぱって更新してみてください。');
+    return;
+  }
+
   const vw = video.videoWidth, vh = video.videoHeight;
 
   // 処理負荷を抑えるため、長辺が800pxを超える場合は縮小してから解析する
@@ -879,6 +919,11 @@ function tickScanner(mode){
 function scanFromFile(file, mode){
   if(!file) return;
   setScanMsg('画像を解析中…');
+  ensureJsQR().catch(()=>{}).then(()=>{
+  if(typeof jsQR === 'undefined'){
+    setScanMsg('QR読み取り機能の読み込みに失敗しました。通信状況を確認してもう一度お試しください。');
+    return;
+  }
   const reader = new FileReader();
   reader.onload = e=>{
     const img = new window.Image();
@@ -907,6 +952,7 @@ function scanFromFile(file, mode){
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+  }); // ensureJsQR
 }
 
 function setScanMsg(msg){
