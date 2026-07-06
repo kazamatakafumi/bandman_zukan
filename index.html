@@ -1058,18 +1058,49 @@ function renderTradeSelect(){
 }
 document.getElementById('tradeSelect').addEventListener('change', e=>generateTradeQR(e.target.value));
 
+// QRCode.js（トレード用QR生成ライブラリ）がCDNから読み込めているか確認し、
+// 失敗していたら別CDNから読み込み直す
+let qrLibLoadPromise = null;
+function ensureQRCodeLib(){
+  if(typeof QRCode !== 'undefined') return Promise.resolve();
+  if(qrLibLoadPromise) return qrLibLoadPromise;
+  const fallbackUrls = [
+    'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
+    'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js'
+  ];
+  qrLibLoadPromise = new Promise((resolve, reject)=>{
+    let i = 0;
+    function tryNext(){
+      if(typeof QRCode !== 'undefined'){ resolve(); return; }
+      if(i >= fallbackUrls.length){ reject(new Error('QRCode lib failed to load from all sources')); return; }
+      const s = document.createElement('script');
+      s.src = fallbackUrls[i++];
+      s.onload = ()=>{ if(typeof QRCode !== 'undefined') resolve(); else tryNext(); };
+      s.onerror = tryNext;
+      document.head.appendChild(s);
+    }
+    tryNext();
+  });
+  return qrLibLoadPromise;
+}
+
 function generateTradeQR(insectId){
   const box = document.getElementById('tradeQrBox');
-  box.innerHTML = '';
+  box.innerHTML = '<div class="small">QRコードを準備中…</div>';
   if(!insectId) return;
-  const payload = JSON.stringify({
-    type:'trade', id: insectId, from: state.nickname || '名無しのヲタク', ts: Date.now()
+  ensureQRCodeLib().then(()=>{
+    box.innerHTML = '';
+    const payload = JSON.stringify({
+      type:'trade', id: insectId, from: state.nickname || '名無しのヲタク', ts: Date.now()
+    });
+    new QRCode(box, { text: payload, width: 200, height: 200, colorDark:'#4a3b57', colorLight:'#ffffff' });
+    const cap = document.createElement('div');
+    cap.className = 'small mt8';
+    cap.textContent = '相手にこの画面を見せて、カメラで読み取ってもらってね';
+    box.appendChild(cap);
+  }).catch(()=>{
+    box.innerHTML = '<div class="small">QRコードの読み込みに失敗しました。通信状況を確認して、画面を下に引っぱって更新してみてください。</div>';
   });
-  new QRCode(box, { text: payload, width: 200, height: 200, colorDark:'#4a3b57', colorLight:'#ffffff' });
-  const cap = document.createElement('div');
-  cap.className = 'small mt8';
-  cap.textContent = '相手にこの画面を見せて、カメラで読み取ってもらってね';
-  box.appendChild(cap);
 }
 
 document.getElementById('btnStartTradeScan').addEventListener('click', ()=>{
@@ -1264,8 +1295,12 @@ document.getElementById('photoInput').addEventListener('change', e=>{
 });
 
 document.getElementById('btnMasterList').addEventListener('click', ()=>{
+  document.getElementById('masterListModal').classList.add('show');
   const grid = document.getElementById('masterListGrid');
-  if(grid.childElementCount === 0){
+  if(grid.childElementCount > 0) return;
+  grid.innerHTML = '<p class="small">QRコードを準備中…</p>';
+  ensureQRCodeLib().then(()=>{
+    grid.innerHTML = '';
     BANDMEN.forEach((bm,i)=>{
       const cell = document.createElement('div');
       cell.style.cssText = 'background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;';
@@ -1279,8 +1314,9 @@ document.getElementById('btnMasterList').addEventListener('click', ()=>{
       grid.appendChild(cell);
       new QRCode(qrHolder, { text: 'BANDZUKAN:'+bm.id, width: 110, height: 110, colorDark:'#4a3b57', colorLight:'#ffffff' });
     });
-  }
-  document.getElementById('masterListModal').classList.add('show');
+  }).catch(()=>{
+    grid.innerHTML = '<p class="small">QRコードの読み込みに失敗しました。通信状況を確認して、画面を下に引っぱって更新してみてください。</p>';
+  });
 });
 document.getElementById('closeMasterList').addEventListener('click', ()=>{
   document.getElementById('masterListModal').classList.remove('show');
@@ -1293,6 +1329,28 @@ function renderAll(){
   renderZukanGrid();
   document.getElementById('hdrCount').textContent = uniqueCount();
 }
+
+// テスト用：URLに ?unlock=z01 や ?unlock=z01,z02,z50 を付けると
+// スキャンなしでそのバンドマンを手に入れた状態にできる（開発・確認用）
+(function applyDebugUnlock(){
+  const params = new URLSearchParams(location.search);
+  const unlock = params.get('unlock');
+  if(!unlock) return;
+  const ids = unlock === 'all' ? BANDMEN.map(b=>b.id) : unlock.split(',').map(s=>s.trim());
+  let changed = false;
+  ids.forEach(id=>{
+    if(BANDMEN_BY_ID[id] && !state.collection[id]){
+      state.collection[id] = 1;
+      state.totalCatches += 1;
+      changed = true;
+    }
+  });
+  if(changed){
+    saveStateLocal(state);
+    queueCloudSave();
+  }
+})();
+
 renderAll();
 showTab('zukan');
 
