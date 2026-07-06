@@ -144,12 +144,11 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
 .zukan-cell .no{
   position:absolute; top:4px; left:6px; font-size:9px; font-weight:900; color:var(--ink-soft);
 }
-.zukan-cell .icon{font-size:29px; line-height:1; margin-bottom:4px;}
-.zukan-cell .icon img{width:32px; height:32px; object-fit:contain; display:block;}
+.zukan-cell .icon{font-size:40px; line-height:1; margin-bottom:4px;}
+.zukan-cell .icon img{width:48px; height:48px; object-fit:contain; display:block;}
 .zukan-cell .nm{font-size:9.5px; font-weight:900; text-align:center; line-height:1.25; color:var(--ink);}
-.zukan-cell .cnt{position:absolute; bottom:4px; right:6px; font-size:9px; font-weight:900; color:var(--pink);}
-.zukan-cell.locked{opacity:.6; border-top-style:dashed; border-top-color:var(--muted);}
-.zukan-cell.locked .icon{filter:grayscale(1); opacity:.6;}
+.zukan-cell .cnt{position:absolute; bottom:4px; right:6px; font-size:11.5px; font-weight:900; color:var(--pink);}
+.zukan-cell.locked{opacity:.75; border-top-style:dashed; border-top-color:var(--muted);}
 .zukan-cell.locked .nm{color:var(--ink-soft);}
 .zukan-cell[data-rarity="R"]:not(.locked){border-top-color:var(--sky);}
 .zukan-cell[data-rarity="SR"]:not(.locked){border-top-color:var(--mint);}
@@ -761,8 +760,10 @@ function renderZukanGrid(){
     const cell = document.createElement('div');
     cell.className = 'zukan-cell' + (owned ? '' : ' locked');
     cell.dataset.rarity = bm.rarity;
-    const iconStyle = owned ? (bm.img ? '' : `filter:hue-rotate(${bm.hue}deg)`) : 'filter:grayscale(1)';
-    const iconContent = owned ? (bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji) : '❔';
+    const iconStyle = owned
+      ? (bm.img ? '' : `filter:hue-rotate(${bm.hue}deg)`)
+      : 'filter:brightness(0) opacity(.5);';
+    const iconContent = bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji;
     cell.innerHTML = `
       <div class="no">No.${String(i+1).padStart(2,'0')}</div>
       <div class="icon" style="${iconStyle}">${iconContent}</div>
@@ -785,8 +786,8 @@ function openInsectModal(id){
   rt.textContent = RARITY_LABEL[bm.rarity];
   rt.className = 'rarity-tag ' + bm.rarity;
   const icon = document.getElementById('modalIcon');
-  icon.innerHTML = owned ? (bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji) : '❔';
-  icon.style.filter = owned ? (bm.img ? 'none' : `hue-rotate(${bm.hue}deg)`) : 'grayscale(1)';
+  icon.innerHTML = bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji;
+  icon.style.filter = owned ? (bm.img ? 'none' : `hue-rotate(${bm.hue}deg)`) : 'brightness(0) opacity(.5)';
   document.getElementById('modalDesc').textContent = owned ? bm.desc : 'まだ みつけていない バンドマンです。QRコードを さがしてみよう。';
   document.getElementById('modalHabitat').textContent = owned ? ('出没スポット：' + bm.habitat) : '';
   document.getElementById('modalCount').textContent = owned ? ('つかまえた数：' + state.collection[id] + ' 枚') : '';
