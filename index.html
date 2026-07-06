@@ -838,36 +838,36 @@ function stopScanner(mode){
 function schedTick(mode){
   const s = scanners[mode];
   if(!s) return;
-  s.timer = setTimeout(()=>{ tickScanner(mode); schedTick(mode); }, 200);
+  s.timer = setTimeout(()=>{
+    try{
+      tickScanner(mode);
+    }catch(err){
+      console.error('scan tick error', err);
+    }
+    schedTick(mode); // エラーが起きても必ずループを継続する
+  }, 180);
 }
 
 function tickScanner(mode){
   const s = scanners[mode];
   if(!s || s.cooldown) return;
-  const { video, canvas, ctx } = s;
+  const { video, ctx, canvas } = s;
   if(video.readyState < 2 || !video.videoWidth) return;
 
   const vw = video.videoWidth, vh = video.videoHeight;
-  // 全体をキャプチャ（iOSはクロップすると検出率が下がるため）
-  canvas.width = vw;
-  canvas.height = vh;
-  ctx.drawImage(video, 0, 0, vw, vh);
 
-  let imgData = ctx.getImageData(0, 0, vw, vh);
+  // 処理負荷を抑えるため、長辺が800pxを超える場合は縮小してから解析する
+  // （iPhoneのカメラはネイティブ解像度が非常に大きく、フル解像度のまま
+  //   ピクセル処理すると重すぎてスキャンが実質止まってしまうため）
+  const maxSide = 800;
+  const scale = Math.min(1, maxSide / Math.max(vw, vh));
+  const cw = Math.round(vw * scale), ch = Math.round(vh * scale);
+  canvas.width = cw;
+  canvas.height = ch;
+  ctx.drawImage(video, 0, 0, cw, ch);
 
-  // iOS Safari対応：canvas.filterが使えないので手動でコントラスト調整
-  const d = imgData.data;
-  const factor = 1.4;
-  const intercept = 128 * (1 - factor);
-  for(let i = 0; i < d.length; i += 4){
-    d[i]   = Math.min(255, Math.max(0, d[i]   * factor + intercept));
-    d[i+1] = Math.min(255, Math.max(0, d[i+1] * factor + intercept));
-    d[i+2] = Math.min(255, Math.max(0, d[i+2] * factor + intercept));
-  }
-  ctx.putImageData(imgData, 0, 0);
-  imgData = ctx.getImageData(0, 0, vw, vh);
-
-  const code = jsQR(imgData.data, vw, vh, { inversionAttempts: 'attemptBoth' });
+  const imgData = ctx.getImageData(0, 0, cw, ch);
+  const code = jsQR(imgData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
   if(code && code.data){
     s.cooldown = true;
     if(navigator.vibrate) navigator.vibrate(80);
@@ -883,27 +883,25 @@ function scanFromFile(file, mode){
   reader.onload = e=>{
     const img = new window.Image();
     img.onload = ()=>{
-      const c = document.createElement('canvas');
-      c.width = img.width; c.height = img.height;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      let imgData = ctx.getImageData(0, 0, c.width, c.height);
-      // 手動コントラスト（iOS対応）
-      const d = imgData.data;
-      const factor = 1.5, intercept = 128 * (1 - factor);
-      for(let i = 0; i < d.length; i += 4){
-        d[i]   = Math.min(255, Math.max(0, d[i]   * factor + intercept));
-        d[i+1] = Math.min(255, Math.max(0, d[i+1] * factor + intercept));
-        d[i+2] = Math.min(255, Math.max(0, d[i+2] * factor + intercept));
-      }
-      ctx.putImageData(imgData, 0, 0);
-      imgData = ctx.getImageData(0, 0, c.width, c.height);
-      const code = jsQR(imgData.data, c.width, c.height, { inversionAttempts: 'attemptBoth' });
-      if(code && code.data){
-        if(navigator.vibrate) navigator.vibrate(80);
-        onQRDetected(code.data, mode);
-      } else {
-        setScanMsg('読み取れませんでした。QRコードが鮮明に写っているか確認してください。');
+      try{
+        const maxSide = 1200;
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const cw = Math.round(img.width * scale), ch = Math.round(img.height * scale);
+        const c = document.createElement('canvas');
+        c.width = cw; c.height = ch;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        const imgData = ctx.getImageData(0, 0, cw, ch);
+        const code = jsQR(imgData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
+        if(code && code.data){
+          if(navigator.vibrate) navigator.vibrate(80);
+          onQRDetected(code.data, mode);
+        } else {
+          setScanMsg('読み取れませんでした。QRコードが鮮明に写っているか確認してください。');
+        }
+      }catch(err){
+        console.error('photo scan error', err);
+        setScanMsg('画像の解析に失敗しました。別の画像でお試しください。');
       }
     };
     img.src = e.target.result;
