@@ -339,10 +339,14 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
   padding:4px 2px; font-size:9px; font-weight:900; text-align:center; color:var(--ink-soft);
 }
 .band-tile .ic{font-size:22px; line-height:1; margin-bottom:2px;}
+.band-tile .ic img{width:30px; height:30px; object-fit:contain; display:block; margin:0 auto;}
 .band-tile.selected{border-color:var(--pink); background:#fff0f6; color:var(--ink); box-shadow:0 0 0 2px rgba(255,111,160,.2);}
 .band-tile .num{
-  position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%;
-  background:var(--pink); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center;
+  position:absolute; top:-6px; right:-6px; width:20px; height:18px; border-radius:9px;
+  background:var(--pink); color:#fff; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center;
+}
+.band-tile .owned-tag{
+  display:block; font-size:8.5px; font-weight:700; color:var(--ink-soft); margin-top:1px;
 }
 .band-power-row{
   display:flex; align-items:center; justify-content:space-between;
@@ -475,7 +479,7 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
         <div class="band-select-grid" id="bandSelectGrid"></div>
         <div class="band-power-row mt8">
           <span>バンドパワー</span>
-          <b id="bandPowerVal">0</b>
+          <b id="bandPowerVal">0</b><span class="small"> / 100</span>
         </div>
         <button class="btn gold mt8" id="btnRegisterBand">このバンドを登録する</button>
         <p class="small center mt8" id="bandStatus"></p>
@@ -621,12 +625,32 @@ const PART_HIRAGANA = {
 };
 
 // バンドパワーの計算に使うレア度別のパワー
-const POWER_BY_RARITY = {N:10, R:18, SR:30, UR:45, SP:70};
+// 平均をベースにすることで、人数が何人でも上限（100）が変わらないようにしている
+const BASE_POWER_BY_RARITY = {N:18, R:34, SR:52, UR:74, SP:100};
 function computeBandPower(memberIds){
-  return memberIds.reduce((sum, id)=>{
-    const bm = BANDMEN_BY_ID[id];
-    return sum + (bm ? (POWER_BY_RARITY[bm.rarity] || 0) : 0);
-  }, 0);
+  const members = (memberIds||[]).map(id=>BANDMEN_BY_ID[id]).filter(Boolean);
+  if(members.length === 0) return 0;
+
+  // 基礎値：レア度の「平均」（合計にすると人数が多いほど有利になってしまうため）
+  const avg = members.reduce((sum,bm)=> sum + (BASE_POWER_BY_RARITY[bm.rarity]||0), 0) / members.length;
+
+  // 相性①：パートがかぶっていないほど良い（全員バラバラなら1.0倍、かぶるほど最大0.7倍まで低下）
+  const uniqueParts = new Set(members.map(bm=>bm.part)).size;
+  const diversityRatio = uniqueParts / members.length;
+  let synergy = 0.7 + 0.3 * diversityRatio;
+
+  // 相性②：同じバンド所属どうしが2人以上いると少しボーナス（最大+10%）
+  const bandCounts = {};
+  members.forEach(bm=>{
+    const b = bm.band || 'ソロ活動';
+    if(b === 'ソロ活動') return;
+    bandCounts[b] = (bandCounts[b]||0) + 1;
+  });
+  const maxSameBand = Object.values(bandCounts).reduce((a,b)=>Math.max(a,b), 0);
+  if(maxSameBand >= 2) synergy += 0.05 * Math.min(maxSameBand-1, 2);
+
+  const power = Math.round(avg * synergy);
+  return Math.max(0, Math.min(100, power)); // 上限は常に100（人数に関係なく変わらない）
 }
 
 /* =========================================================
@@ -1257,13 +1281,17 @@ function renderBandBuilder(){
   grid.innerHTML = '';
   const owned = BANDMEN.filter(b=>state.collection[b.id]);
   if(owned.length===0){
-    grid.innerHTML = '<p class="small">バンドマンを1枚以上つかまえると編成できます</p>';
+    grid.innerHTML = '<p class="small">バンドマンを1人以上つかまえると編成できます</p>';
   }else{
     owned.forEach(bm=>{
-      const selectedIdx = state.band.members.indexOf(bm.id);
+      const ownedCount = state.collection[bm.id] || 0;
+      const inBandCount = state.band.members.filter(x=>x===bm.id).length;
       const tile = document.createElement('div');
-      tile.className = 'band-tile' + (selectedIdx>-1 ? ' selected' : '');
-      tile.innerHTML = `<div class="ic" style="filter:hue-rotate(${bm.hue}deg)">${bm.emoji}</div>${bm.name}${selectedIdx>-1 ? `<div class="num">${selectedIdx+1}</div>` : ''}`;
+      tile.className = 'band-tile' + (inBandCount>0 ? ' selected' : '');
+      const iconStyle = bm.img ? '' : `filter:hue-rotate(${bm.hue}deg)`;
+      const iconContent = bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji;
+      const ownedTag = ownedCount>1 ? `<span class="owned-tag">所持×${ownedCount}</span>` : '';
+      tile.innerHTML = `<div class="ic" style="${iconStyle}">${iconContent}</div>${bm.name}${ownedTag}${inBandCount>0 ? `<div class="num">×${inBandCount}</div>` : ''}`;
       tile.addEventListener('click', ()=>toggleBandMember(bm.id));
       grid.appendChild(tile);
     });
@@ -1271,9 +1299,11 @@ function renderBandBuilder(){
   updateBandPowerDisplay();
 }
 function toggleBandMember(id){
-  const i = state.band.members.indexOf(id);
-  if(i>-1){
-    state.band.members.splice(i,1);
+  const owned = state.collection[id] || 0;
+  const inBandCount = state.band.members.filter(x=>x===id).length;
+  if(inBandCount >= owned){
+    // 持っている枚数まで入れきっていたら、まとめて外す
+    state.band.members = state.band.members.filter(x=>x!==id);
   }else{
     if(state.band.members.length >= 5){
       document.getElementById('bandStatus').textContent = 'バンドは最大5人までだよ';
