@@ -182,7 +182,7 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
 }
 .part-tag{
   display:inline-block; font-size:10px; font-weight:900; padding:3px 10px; border-radius:999px;
-  color:var(--ink); background:#fff; border:1.5px solid var(--line); margin-left:6px;
+  background:var(--muted); color:#fff; margin-left:6px;
 }
 
 /* ---------- モーダル ---------- */
@@ -577,7 +577,7 @@ const CUSTOM_BANDMEN = {
     img: IMG_HACHIMITSU_TAKAFUMI,
     habitat: 'ライブハウスの控室',
     band: '3markets[ ]',
-    desc: '鮮やかなピンクの毛並みと、優しい笑顔が特徴。音を振動に変換して、ファンにエネルギーを与える。気まぐれに小さな王冠を被る。'
+    desc: '歌は歌ってるように見えるが歌っていない。こいつが歌うのは「唄」である。趣味は禁欲。'
   }
 };
 
@@ -613,6 +613,12 @@ const BANDMEN_BY_ID = {};
 BANDMEN.forEach(v=>BANDMEN_BY_ID[v.id]=v);
 
 const RARITY_LABEL = {N:'ノーマル', R:'★ レア', SR:'★★ スーパーレア', UR:'★★★ ウルトラレア', SP:'👑 シークレット'};
+const PART_HIRAGANA = {
+  'ボーカル':'ぼーかる', 'ギター':'ぎたー', 'ベース':'べーす', 'ドラム':'どらむ',
+  'キーボード':'きーぼーど', 'DJ':'でぃーじぇー', 'ラッパー':'らっぱー',
+  'ストリングス':'すとりんぐす', 'ホーン隊':'ほーんたい', 'ダンサー':'だんさー',
+  'プロデューサー':'ぷろでゅーさー', '弾き語り':'ひきがたり'
+};
 
 // バンドパワーの計算に使うレア度別のパワー
 const POWER_BY_RARITY = {N:10, R:18, SR:30, UR:45, SP:70};
@@ -665,12 +671,12 @@ function uniqueCount(){ return Object.keys(state.collection).length; }
    で表示される設定値をコピペするだけでOKです。
    ========================================================= */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyB8cO5dbj-JA0Yp8odjlQGkyHjY6BEYMGU",
+  authDomain: "unagi-jump.firebaseapp.com",
+  projectId: "unagi-jump",
+  storageBucket: "unagi-jump.firebasestorage.app",
+  messagingSenderId: "936002240230",
+  appId: "1:936002240230:web:da18c52b1e99b405038527"
 };
 
 let db = null;
@@ -796,9 +802,14 @@ function openInsectModal(id){
   document.getElementById('modalNo').textContent = 'No.' + String(BANDMEN.indexOf(bm)+1).padStart(2,'0');
   document.getElementById('modalName').textContent = owned ? bm.name : '？？？';
   const rt = document.getElementById('modalRarity');
-  rt.textContent = RARITY_LABEL[bm.rarity];
-  rt.className = 'rarity-tag ' + bm.rarity;
-  document.getElementById('modalPart').textContent = owned ? bm.part : '';
+  if(bm.rarity === 'N'){
+    rt.style.display = 'none';
+  } else {
+    rt.style.display = '';
+    rt.textContent = RARITY_LABEL[bm.rarity];
+    rt.className = 'rarity-tag ' + bm.rarity;
+  }
+  document.getElementById('modalPart').textContent = owned ? (PART_HIRAGANA[bm.part] || bm.part) : '';
   const icon = document.getElementById('modalIcon');
   icon.innerHTML = bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji;
   icon.style.filter = owned ? (bm.img ? 'none' : `hue-rotate(${bm.hue}deg)`) : 'brightness(0) opacity(.3)';
