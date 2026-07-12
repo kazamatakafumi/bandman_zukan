@@ -622,11 +622,11 @@ const CUSTOM_BANDMEN = {
     desc: '歌は歌ってるように見えるが歌っていない。こいつが歌うのは「唄」である。趣味は禁欲。'
   },
   z02: {
-    name: '矢矧暁',
+    name: 'やはぎあきら犬',
     img: IMG_YAHAGI_AKIRAKEN,
     habitat: 'スタジオ帰りのコンビニ',
     band: '3markets[ ]',
-    desc: '漢字が読みづらいし感情も読みづらい。ギターでしか己を表現できない音楽に愛されし音楽の犬。今日もギターで吠えている。'
+    desc: '本名　矢矧暁。漢字が読みづらいし感情も読みづらい。ギターでしか己を表現できない音楽に愛されし音楽の犬。今日もギターで吠えている。'
   },
   z03: {
     name: 'たむら ぞう',
@@ -923,7 +923,12 @@ function openInsectModal(id){
   const icon = document.getElementById('modalIcon');
   icon.innerHTML = bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji;
   icon.style.filter = owned ? (bm.img ? 'none' : `hue-rotate(${bm.hue}deg)`) : 'brightness(0) opacity(.3)';
-  document.getElementById('modalDesc').textContent = owned ? bm.desc : 'まだ みつけていない バンドマンです。QRコードを さがしてみよう。';
+  const modalDescEl = document.getElementById('modalDesc');
+  if(owned){
+    modalDescEl.textContent = bm.desc;
+  }else{
+    modalDescEl.innerHTML = 'まだ みつけていない バンドマンです。<br>QRコードを さがしてみよう。';
+  }
   document.getElementById('modalHabitat').textContent = owned ? ('所属バンド：' + (bm.band || 'ソロ活動')) : '';
   document.getElementById('modalCount').textContent = owned ? ('つかまえた数：' + state.collection[id] + ' 枚') : '';
   document.getElementById('insectModal').classList.add('show');
@@ -1016,7 +1021,7 @@ function schedTick(mode){
       console.error('scan tick error', err);
     }
     schedTick(mode); // エラーが起きても必ずループを継続する
-  }, 180);
+  }, 120);
 }
 
 function tickScanner(mode){
@@ -1032,15 +1037,19 @@ function tickScanner(mode){
 
   const vw = video.videoWidth, vh = video.videoHeight;
 
-  // 処理負荷を抑えるため、長辺が800pxを超える場合は縮小してから解析する
-  // （iPhoneのカメラはネイティブ解像度が非常に大きく、フル解像度のまま
-  //   ピクセル処理すると重すぎてスキャンが実質止まってしまうため）
-  const maxSide = 800;
-  const scale = Math.min(1, maxSide / Math.max(vw, vh));
-  const cw = Math.round(vw * scale), ch = Math.round(vh * scale);
+  // 画面の枠（.scan-frame、inset 12%）に映っている範囲だけを切り出して解析する。
+  // カメラ全体を縮小すると枠内のQRがどんどん小さくなって精度が落ちるため、
+  // 「実際にユーザーが狙っている範囲」だけを高解像度で見るようにしている。
+  const inset = 0.12;
+  const sx = vw * inset, sy = vh * inset;
+  const sw = vw * (1 - inset*2), sh = vh * (1 - inset*2);
+
+  const maxSide = 720;
+  const scale = Math.min(1, maxSide / Math.max(sw, sh));
+  const cw = Math.round(sw * scale), ch = Math.round(sh * scale);
   canvas.width = cw;
   canvas.height = ch;
-  ctx.drawImage(video, 0, 0, cw, ch);
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
 
   const imgData = ctx.getImageData(0, 0, cw, ch);
   const code = jsQR(imgData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
