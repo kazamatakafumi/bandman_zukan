@@ -439,13 +439,14 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
     <!-- ============ ③ こうかん ============ -->
     <section id="view-trade" class="view">
       <div class="section-title"><span class="bar"></span>こうかん</div>
-      <p class="lead">あなたの飼っている バンドマンの QRを がめんに だして、相手に カメラで よみとってもらおう。脱退はしないから安心して。</p>
+      <p class="lead">あげたい バンドマンを えらんで「交換に出す」と、その子は あなたの図鑑から いなくなって、相手が QRを よみとって うけとれるよ。</p>
 
       <div class="card">
         <div class="small mt8">あげる バンドマンを えらぶ</div>
         <select class="select-insect mt8" id="tradeSelect"></select>
+        <button class="btn mt8" id="btnTradeGive">この子を 交換に出す</button>
         <div class="qr-box" id="tradeQrBox">
-          <div class="small">バンドマンを えらぶと QRが でます</div>
+          <div class="small">えらんで「交換に出す」と QRが でます</div>
         </div>
       </div>
 
@@ -1140,7 +1141,7 @@ function onQRDetected(text, mode){
   }
 
   // 捕獲QR: "BANDZUKAN:z07" 形式
-  const m = /^BANDZUKAN:(z\d{2})$/.exec(text.trim());
+  const m = /^BANDZUKAN:(z\d{2,3})$/.exec(text.trim());
   if(m && BANDMEN_BY_ID[m[1]]){
     handleCatch(m[1], mode);
     return;
@@ -1195,8 +1196,12 @@ document.getElementById('stampClose').addEventListener('click', ()=>{
   const overlay = document.getElementById('stampOverlay');
   const mode = overlay._mode;
   overlay.classList.remove('show');
-  setTimeout(()=>{ const s = scanners[mode]; if(s) s.cooldown = false; }, 200);
-  if(mode==='catch') setScanMsg('バンドマンをさがしています…');
+  if(mode==='catch'){
+    // 連続で捕まえられないように、捕まえたら図鑑画面へもどる
+    showTab('zukan');
+  } else {
+    setTimeout(()=>{ const s = scanners[mode]; if(s) s.cooldown = false; }, 200);
+  }
 });
 
 /* =========================================================
@@ -1204,22 +1209,48 @@ document.getElementById('stampClose').addEventListener('click', ()=>{
    ========================================================= */
 function renderTradeSelect(){
   const sel = document.getElementById('tradeSelect');
+  const giveBtn = document.getElementById('btnTradeGive');
   sel.innerHTML = '';
   const owned = BANDMEN.filter(b=>state.collection[b.id]);
   if(owned.length===0){
     sel.innerHTML = '<option>まだ バンドマンを飼っていません</option>';
+    if(giveBtn) giveBtn.disabled = true;
     document.getElementById('tradeQrBox').innerHTML = '<div class="small">バンドマンを1人以上飼っていると こうかんできます</div>';
     return;
   }
   owned.forEach(bm=>{
     const opt = document.createElement('option');
     opt.value = bm.id;
-    opt.textContent = bm.name;
+    const c = state.collection[bm.id];
+    opt.textContent = bm.name + (c>1?`（×${c}）`:'');
     sel.appendChild(opt);
   });
-  generateTradeQR(sel.value);
+  if(giveBtn) giveBtn.disabled = false;
+  resetTradeQrBox();
 }
-document.getElementById('tradeSelect').addEventListener('change', e=>generateTradeQR(e.target.value));
+function resetTradeQrBox(){
+  const box = document.getElementById('tradeQrBox');
+  if(box) box.innerHTML = '<div class="small">えらんで「交換に出す」と QRが でます</div>';
+}
+document.getElementById('tradeSelect').addEventListener('change', ()=>resetTradeQrBox());
+document.getElementById('btnTradeGive').addEventListener('click', ()=>{
+  const sel = document.getElementById('tradeSelect');
+  const id = sel.value;
+  const bm = BANDMEN_BY_ID[id];
+  if(!bm || !state.collection[id]) return;
+  const cnt = state.collection[id];
+  const msg = cnt > 1
+    ? `「${bm.name}」を1体 交換に出します（のこり ${cnt-1}体）。相手がQRを よみとると うけとれます。よろしいですか？`
+    : `「${bm.name}」を交換に出すと、あなたの図鑑から いなくなります。よろしいですか？`;
+  if(!confirm(msg)) return;
+  state.collection[id] = cnt - 1;
+  if(state.collection[id] <= 0) delete state.collection[id];
+  saveStateLocal(state);
+  queueCloudSave();
+  renderAll();
+  renderTradeSelect();
+  generateTradeQR(id);
+});
 
 // QRCode.js（トレード用QR生成ライブラリ）がCDNから読み込めているか確認し、
 // 失敗していたら別CDNから読み込み直す
@@ -1267,7 +1298,7 @@ function generateTradeQR(insectId){
       box.appendChild(canvas);
       const cap = document.createElement('div');
       cap.className = 'small mt8';
-      cap.textContent = '相手にこの画面を見せて、カメラで読み取ってもらってね';
+      cap.textContent = '「'+(BANDMEN_BY_ID[insectId]?BANDMEN_BY_ID[insectId].name:'')+'」を 相手に よみとってもらってね';
       box.appendChild(cap);
     });
   }).catch(()=>{
