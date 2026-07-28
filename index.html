@@ -521,8 +521,8 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
         <button class="btn secondary" id="btnLoadCode">このコードで読みこむ</button>
       </div>
 
-      <div class="card mt14 hidden" id="debugResetCard">
-        <div class="small">🛠 テスト用（?debug=1 のときだけ表示）</div>
+      <div class="card mt14" id="debugResetCard">
+        <div class="small">🗑 あつめた図鑑を さいしょから やりなおす</div>
         <button class="btn ghost mt8" id="btnDebugReset" style="color:var(--ink); border-color:#e0a0b8;">図鑑データをぜんぶリセット</button>
       </div>
 
@@ -1601,12 +1601,8 @@ function renderAll(){
   }
 })();
 
-// テスト用：URLに ?debug=1 を付けるとマイページ最下部にリセットボタンが出る
+// マイページ最下部のリセットボタン（いつでも表示）
 (function setupDebugReset(){
-  const params = new URLSearchParams(location.search);
-  if(params.get('debug') !== '1') return;
-  const card = document.getElementById('debugResetCard');
-  if(card) card.classList.remove('hidden');
   document.getElementById('btnDebugReset').addEventListener('click', ()=>{
     if(!confirm('図鑑・捕獲数・バンド編成をすべてリセットします。よろしいですか？\n（ニックネームとバンドマンコードは残ります）')) return;
     state.collection = {};
