@@ -1648,28 +1648,42 @@ document.getElementById('btnMasterList').addEventListener('click', ()=>{
   document.getElementById('masterListModal').classList.add('show');
   const grid = document.getElementById('masterListGrid');
   if(grid.childElementCount > 0) return;
-  grid.innerHTML = '<p class="small">QRコードを準備中…</p>';
+  grid.innerHTML = '';
+  const qrHolders = [];
+  BANDMEN.filter(bm=>!bm.hidden).forEach((bm,i)=>{
+    const cell = document.createElement('div');
+    cell.style.cssText = 'background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;';
+    const qrHolder = document.createElement('div');
+    qrHolder.innerHTML = '<div class="small">QR準備中…</div>';
+    cell.appendChild(qrHolder);
+    qrHolders.push({ holder: qrHolder, id: bm.id });
+    const label = document.createElement('div');
+    label.className = 'small';
+    label.style.marginTop = '4px';
+    label.textContent = `No.${String(i+1).padStart(2,'0')} ${bm.name}`;
+    cell.appendChild(label);
+    const getBtn = document.createElement('button');
+    getBtn.className = 'btn secondary';
+    getBtn.style.cssText = 'margin-top:6px; padding:6px 10px; font-size:12px; width:100%;';
+    getBtn.textContent = '📔 スキャンなしでゲット';
+    getBtn.addEventListener('click', ()=>{
+      document.getElementById('masterListModal').classList.remove('show');
+      handleCatch(bm.id, 'catch');
+    });
+    cell.appendChild(getBtn);
+    grid.appendChild(cell);
+  });
   ensureQRCodeLib().then(()=>{
-    grid.innerHTML = '';
-    BANDMEN.filter(bm=>!bm.hidden).forEach((bm,i)=>{
-      const cell = document.createElement('div');
-      cell.style.cssText = 'background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;';
-      const qrHolder = document.createElement('div');
-      cell.appendChild(qrHolder);
-      const label = document.createElement('div');
-      label.className = 'small';
-      label.style.marginTop = '4px';
-      label.textContent = `No.${String(i+1).padStart(2,'0')} ${bm.name}`;
-      cell.appendChild(label);
-      grid.appendChild(cell);
+    qrHolders.forEach(({holder, id})=>{
+      holder.innerHTML = '';
       const canvas = document.createElement('canvas');
-      qrHolder.appendChild(canvas);
-      QRCode.toCanvas(canvas, 'BANDZUKAN:'+bm.id, { width: 110, margin: 1, color: { dark:'#4a3b57', light:'#ffffff' } }, err=>{
+      holder.appendChild(canvas);
+      QRCode.toCanvas(canvas, 'BANDZUKAN:'+id, { width: 110, margin: 1, color: { dark:'#4a3b57', light:'#ffffff' } }, err=>{
         if(err) console.error('master QR generate error', err);
       });
     });
   }).catch(()=>{
-    grid.innerHTML = '<p class="small">QRコードの読み込みに失敗しました。通信状況を確認して、画面を下に引っぱって更新してみてください。</p>';
+    qrHolders.forEach(({holder})=>{ holder.innerHTML = '<div class="small">QR読み込み失敗</div>'; });
   });
 });
 document.getElementById('closeMasterList').addEventListener('click', ()=>{
