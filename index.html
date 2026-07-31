@@ -807,7 +807,7 @@ const CUSTOM_BANDMEN = {
     part: 'ボーカル',
     habitat: 'クリスマスじゃない日の街',
     band: 'Adult family',
-    desc: '一年中サンタの格好で歌う霊長類代表。いちばん好きな霊長類はゴリラ。動物が苦手なのに、今日も着ぐるみで歌を届けにくる。プレゼントの中身はだいたい歌。'
+    desc: '「あなたのチ○コは何センチ？」と聞いてくる、世界でいちばん質問がえっちなサンタ。プレゼントは下半身経由で心の奥に届けるスタイル。いい子にもわるい子にも、夜のうちに歌をねじこんでくる。好きな霊長類はゴリラ。'
   },
   z20: {
     name: 'sosaターキー',
@@ -906,8 +906,17 @@ function computeBandPower(memberIds){
   const venues  = members.filter(bm=>bm.part === 'ライブハウス');
   const players = members.filter(bm=>bm.part !== 'ライブハウス');
 
-  // ライブハウスだけではパワーは出ない（ハコに バンドマンがいないので）
-  if(players.length === 0) return 0;
+  // ライブハウスだけのバンド：1つだけなら からっぽのハコ（0）。
+  // 2つ以上あつまると「サーキットフェス」になって、ハコの数だけ強くなる
+  if(players.length === 0){
+    if(venues.length < 2) return 0;
+    let fes = venues.length * 20;
+    const regions = venues.map(v=>v.region).filter(Boolean);
+    if(regions.length === venues.length && new Set(regions).size === 1){
+      fes *= 1.2; // 同じ地方のハコどうしなら本物のサーキットイベント
+    }
+    return Math.max(0, Math.min(100, Math.round(fes)));
+  }
 
   // 基礎値：レア度の「平均」（合計にすると人数が多いほど有利になってしまうため）
   const avg = players.reduce((sum,bm)=> sum + (BASE_POWER_BY_RARITY[bm.rarity]||0), 0) / players.length;
@@ -938,10 +947,16 @@ function computeBandPower(memberIds){
   });
   synergy += Math.min(venueBoost, 0.6); // ライブハウス効果は合計+60%まで
 
-  // 相性④：歯グキ馬は女性メンバーと組むと爆上がりする（1人につき+20%）
+  // 相性④：歯グキ馬は女性メンバーが多いほど掛け算的に強くなる（1人につき×1.25）
   if(players.some(bm=>bm.id === 'z05')){
     const ladies = players.filter(bm=>bm.female).length;
-    synergy += Math.min(0.20 * ladies, 0.6);
+    if(ladies > 0) synergy *= Math.pow(1.25, ladies);
+  }
+
+  // 相性⑤：カザマはふたり組が最強。3人以上になるとコミュニケーションがむずかしくなる
+  if(players.some(bm=>bm.id === 'z01' || bm.id === 'z17')){
+    if(players.length === 2) synergy += 0.25;
+    else if(players.length >= 3) synergy -= 0.15;
   }
 
   const power = Math.round(avg * synergy);
@@ -1700,11 +1715,17 @@ const COMBO_MESSAGES = [
     msg: '🌆 夕方と猫だ！あたりが 夕方になった！' },
   { check: m => ['z19','z20','z21'].every(id=>m.some(b=>b.id===id)),
     msg: '🎄 Adult family しゅうごう！まだクリスマスじゃない！' },
+  { check: m => m.filter(b=>b.part!=='ライブハウス').length===2 && m.some(b=>b.id==='z01'||b.id==='z17'),
+    msg: '💪 カザマは ふたり組だと 最強らしい！' },
+  { check: m => m.filter(b=>b.part!=='ライブハウス').length>=3 && m.some(b=>b.id==='z01'||b.id==='z17'),
+    msg: '🤐 カザマが 3人以上の会話に 苦戦している…' },
   { check: m => m.some(b=>b.id==='z05') && m.some(b=>b.female),
     msg: '😍 歯グキ馬が 女子と組めて 歯グキ全開で よろこんでいる！' },
   { check: m => m.some(b=>b.part==='ライブハウス') && m.some(b=>b.part!=='ライブハウス' && b.region && m.some(v=>v.part==='ライブハウス' && v.region===b.region)),
     msg: '🏠 地元凱旋ライブだ！ハコが 大よろこびしている！' },
-  { check: m => m.length>0 && m.every(b=>b.part==='ライブハウス'),
+  { check: m => m.length>=2 && m.every(b=>b.part==='ライブハウス'),
+    msg: '🎪 ハコとハコで サーキットフェスが はじまった！' },
+  { check: m => m.length===1 && m.every(b=>b.part==='ライブハウス'),
     msg: '🤔 ハコだけでは ライブは できないみたい…' },
 ];
 function comboMessageFor(memberIds){
