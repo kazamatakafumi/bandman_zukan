@@ -1042,10 +1042,10 @@ function renderZukanGrid(){
     const iconStyle = owned
       ? (bm.img ? '' : `filter:hue-rotate(${bm.hue}deg)`)
       : 'filter:brightness(0) opacity(.3);';
-    // 未登録のあいだは中身をネタバレしないよう、演奏中の人型シルエットにする（パートごとに姿がちがう）
-    const iconContent = owned
-      ? (bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji)
-      : silhouetteFor(bm, i);
+    // 画像があるキャラは その絵のシルエット、画像がまだ無いキャラは演奏中の人型シルエット
+    const iconContent = bm.img
+      ? `<img src="${bm.img}" alt="">`
+      : (owned ? bm.emoji : silhouetteFor(bm, i));
     cell.innerHTML = `
       <div class="no">No.${String(i+1).padStart(2,'0')}</div>
       <div class="icon" style="${iconStyle}">${iconContent}</div>
@@ -1074,7 +1074,7 @@ function openInsectModal(id){
   }
   document.getElementById('modalPart').textContent = owned ? (PART_HIRAGANA[bm.part] || bm.part) : '';
   const icon = document.getElementById('modalIcon');
-  icon.innerHTML = owned ? (bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji) : silhouetteFor(bm, BANDMEN.indexOf(bm));
+  icon.innerHTML = bm.img ? `<img src="${bm.img}" alt="">` : (owned ? bm.emoji : silhouetteFor(bm, BANDMEN.indexOf(bm)));
   icon.style.filter = owned ? (bm.img ? 'none' : `hue-rotate(${bm.hue}deg)`) : 'brightness(0) opacity(.3)';
   const modalDescEl = document.getElementById('modalDesc');
   if(owned){
