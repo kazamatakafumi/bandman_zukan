@@ -954,6 +954,8 @@ function computeBandPower(memberIds){
   {
     const idSet = new Set(memberIds||[]);
     if(idSet.has('z17') && idSet.has('z19')) power = Math.max(power, 78);
+    // 滋賀！！！：Arakezuri＋びわ湖くんは滋賀のちからで めっちゃ強い
+    if(idSet.has('z15') && idSet.has('z16')) power = Math.max(power, 90);
   }
   return Math.max(0, Math.min(100, power)); // 上限は常に100（人数に関係なく変わらない）
 }
@@ -1730,6 +1732,8 @@ const COMBO_MESSAGES = [
     msg: 'ムロフェスの時はありがとう！' },
   { check: m => m.some(b=>b.id==='z17') && m.some(b=>b.id==='z19'),
     msg: 'ありがとう金玉！' },
+  { check: m => m.some(b=>b.id==='z15') && m.some(b=>b.id==='z16'),
+    msg: '滋賀！！！' },
   { check: m => ['z01','z02','z03','z04'].every(id=>m.some(b=>b.id===id)),
     msg: '3markets[ ]が そろった！今日は解散しないらしい！' },
   { check: m => ['z05','z06','z07','z08'].every(id=>m.some(b=>b.id===id)),
