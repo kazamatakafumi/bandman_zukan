@@ -966,6 +966,11 @@ function computeBandPower(memberIds){
     if(ladies > 0) synergy *= Math.pow(1.25, ladies);
   }
 
+  // 相性④.4：けいこは歯グキがきらい。歯グキ馬と同じバンドになるとパワーが下がる
+  if(players.some(bm=>bm.id==='z10') && players.some(bm=>bm.id==='z11')){
+    synergy -= 0.2;
+  }
+
   // 相性④.5：masatonが他のドラマーと同じバンドに入るとツインドラム編成になり、ちょっと強くなる
   if(players.some(bm=>bm.id==='z04') && players.some(bm=>bm.id!=='z04' && bm.part==='ドラム')){
     synergy += 0.08;
@@ -992,6 +997,8 @@ function computeBandPower(memberIds){
     if(idSet.has('z07') && idSet.has('z09')) power = Math.max(power, 7800);
     // 滋賀！！！：Arakezuri＋びわ湖くんは滋賀のちからで めっちゃ強い
     if(idSet.has('z05') && idSet.has('z06')) power = Math.max(power, 9000);
+    // カザマは けいこがいると めっちゃ強くなる（飼い主のちから）
+    if(idSet.has('z01') && idSet.has('z10')) power = Math.max(power, 8500);
   }
   return Math.max(0, Math.min(10000, power)); // 上限は常に10000（人数に関係なく変わらない）
 }
@@ -1725,6 +1732,11 @@ function toggleBandMember(id){
     // 持っている枚数まで入れきっていたら、まとめて外す
     state.band.members = state.band.members.filter(x=>x!==id);
   }else{
+    // けいこは1匹まで。2匹目を入れようとしたら断る
+    if(id === 'z10' && state.band.members.includes('z10')){
+      document.getElementById('bandStatus').textContent = 'けいこは唯一無二！この世に1人しかいないかけがえのないもの！';
+      return;
+    }
     if(state.band.members.length >= 5){
       document.getElementById('bandStatus').textContent = 'バンドは最大5人までだよ';
       return;
