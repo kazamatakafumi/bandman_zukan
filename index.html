@@ -937,6 +937,11 @@ function computeBandPower(memberIds){
     if(ladies > 0) synergy *= Math.pow(1.25, ladies);
   }
 
+  // 相性④.5：masatonが他のドラマーと同じバンドに入るとツインドラム編成になり、ちょっと強くなる
+  if(players.some(bm=>bm.id==='z04') && players.some(bm=>bm.id!=='z04' && bm.part==='ドラム')){
+    synergy += 0.08;
+  }
+
   // 相性⑤：カザマはふたり組が最強。3人以上になるとコミュニケーションがむずかしくなる
   const kazamaIn = players.some(bm=>bm.id === 'z01' || bm.id === 'z17');
   if(kazamaIn){
@@ -1731,6 +1736,8 @@ const COMBO_MESSAGES = [
     msg: 'ありがとう金玉！' },
   { check: m => m.some(b=>b.id==='z15') && m.some(b=>b.id==='z16'),
     msg: '滋賀！！！' },
+  { check: m => m.some(b=>b.id==='z04') && m.some(b=>b.id!=='z04' && b.part==='ドラム'),
+    msg: 'ツインドラムで全楽曲がメタルに！' },
   { check: m => ['z01','z02','z03','z04'].every(id=>m.some(b=>b.id===id)),
     msg: '3markets[ ]' },
   { check: m => ['z05','z06','z07','z08'].every(id=>m.some(b=>b.id===id)),
