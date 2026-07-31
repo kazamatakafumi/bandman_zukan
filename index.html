@@ -680,7 +680,7 @@ const CUSTOM_BANDMEN = {
     part: 'ボーカル',
     habitat: '花屋の帰り道',
     band: 'Gum-9',
-    desc: '笑うたびに立派な歯グキがこんにちは。歯グキから響く歌声はきょうも絶好調。バンド名のGumはガムではなく歯グキのことなのか、真相は本人のみぞ知る。'
+    desc: '笑うたびに立派な歯グキがこんにちは。歯グキから響く歌声はきょうも絶好調。ギャルを見ると歯茎が大きくなる。'
   },
   z06: {
     name: 'タカハシユウジラフ',
@@ -707,7 +707,7 @@ const CUSTOM_BANDMEN = {
     part: 'ドラム',
     habitat: 'リハスタのドラム椅子の上',
     band: 'Gum-9',
-    desc: '曲に隙間を見つけると埋めずにはいられない。笹の食べ残しも隙間に埋める。ワンマンライブへの作戦を白黒つけずに練り続ける、笑顔の戦略家。'
+    desc: '曲に隙間を見つけると埋めずにはいられない。笹の食べ残しも隙間に埋める。ついでに歯茎の隙間にもなにかを詰めたいと思っている。'
   },
   z09: {
     name: 'ピヨ須賀皇司',
@@ -716,7 +716,7 @@ const CUSTOM_BANDMEN = {
     part: 'ボーカル',
     habitat: 'ラジオブースのすみ',
     band: 'the paddles',
-    desc: '「いつか音楽で世界を征服するのだ」と毎週ラジオで主張しているひよこ。名字にカラスが入っているがひよこ、すなわちカラスではない、つまりひよこ。という回りくどい説明を本人はとても気に入っている。'
+    desc: '「いつか音楽で世界を征服するのだ」と毎週ラジオで主張しているひよこ。名字にカラスが入っているがひよこ。世界征服の前に、まず にわとりになる必要があることには、まだ気づいていない。'
   },
   z10: {
     name: 'マツシマヒョウ大',
@@ -743,10 +743,10 @@ const CUSTOM_BANDMEN = {
     part: 'ボーカル',
     habitat: '夕方の帰り道の塀の上',
     band: '夕方と猫',
-    desc: '夕方にだけ現れて、テレキャスで日常のスキマを歌う猫。届け方を間違えると歌は届かないことを知っているので、毎回風向きを確認してから歌い出す。'
+    desc: '夕方にだけ現れて、テレキャスで日常のスキマを歌う猫。届け方を間違えると歌は届かないことを知っているので、毎回風向きを確認してから歌い出すようにしている。'
   },
   z13: {
-    name: 'このまひロバ',
+    name: 'まひロバ',
     region: '関西',
     img: IMG_YGN_BASS,
     part: 'ベース',
@@ -954,12 +954,20 @@ function computeBandPower(memberIds){
   }
 
   // 相性⑤：カザマはふたり組が最強。3人以上になるとコミュニケーションがむずかしくなる
-  if(players.some(bm=>bm.id === 'z01' || bm.id === 'z17')){
+  const kazamaIn = players.some(bm=>bm.id === 'z01' || bm.id === 'z17');
+  if(kazamaIn){
     if(players.length === 2) synergy += 0.25;
     else if(players.length >= 3) synergy -= 0.15;
   }
 
-  const power = Math.round(avg * synergy);
+  let power = Math.round(avg * synergy);
+  // 正式編成ボーナス：実在バンドがそのまま組めたら、適当な寄せ集めよりちゃんと強い
+  const fullBand = exactFullBand(memberIds);
+  if(fullBand) power = Math.max(power, 80);
+  // ３人よりは独りでいい：カザマ入りの3人以上バンドは、独りのカザマ（18）より必ず弱くなる
+  if(kazamaIn && players.length >= 3) power = Math.min(power, 17);
+  // ムロフェス編成：助っ人ドラムへの感謝はコミュニケーションの壁をこえる
+  if(isMurofesLineup(memberIds)) power = Math.max(power, 75);
   return Math.max(0, Math.min(100, power)); // 上限は常に100（人数に関係なく変わらない）
 }
 
@@ -1701,10 +1709,37 @@ function toggleBandMember(id){
   saveStateLocal(state);
   renderBandBuilder();
 }
+// 実在バンドの正式編成（メンバーが完全一致すると正式結成あつかいになる）
+const FULL_BANDS = [
+  { name: '3markets[ ]',  ids: ['z01','z02','z03','z04'] },
+  { name: 'Gum-9',        ids: ['z05','z06','z07','z08'] },
+  { name: 'the paddles',  ids: ['z09','z10','z11'] },
+  { name: '夕方と猫',      ids: ['z12','z13','z14'] },
+  { name: 'Adult family', ids: ['z19','z20','z21'] },
+];
+function exactFullBand(memberIds){
+  const set = new Set((memberIds||[]).filter(id=>{
+    const bm = BANDMEN_BY_ID[id];
+    return bm && bm.part !== 'ライブハウス'; // ハコは同行OK
+  }));
+  return FULL_BANDS.find(fb => fb.ids.length === set.size && fb.ids.every(id=>set.has(id))) || null;
+}
+
+// サポートドラム編成：まさと不在の3markets[ ]に、助っ人ドラムが入った編成（ムロフェス編成）
+// 今後サポートしてくれたバンドが増えたら、このリストにidを足すだけでOK（例：終活クラブのドラム）
+const SUPPORT_DRUMS = ['z15']; // Arakezuri
+function isMurofesLineup(memberIds){
+  const set = new Set(memberIds||[]);
+  return set.has('z01') && set.has('z02') && set.has('z03') && !set.has('z04')
+      && SUPPORT_DRUMS.some(id=>set.has(id));
+}
+
 // 特定の組み合わせで出る特殊メッセージ（上から順に判定して、当てはまったものを表示）
 const COMBO_MESSAGES = [
   { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z17'),
     msg: '👀 カザマが2人いる…！？' },
+  { check: m => isMurofesLineup(m.map(b=>b.id)),
+    msg: '🙏 ムロフェスの時はありがとう！' },
   { check: m => ['z01','z02','z03','z04'].every(id=>m.some(b=>b.id===id)),
     msg: '🔥 3markets[ ]が そろった！今日は解散しないらしい！' },
   { check: m => ['z05','z06','z07','z08'].every(id=>m.some(b=>b.id===id)),
@@ -1716,9 +1751,9 @@ const COMBO_MESSAGES = [
   { check: m => ['z19','z20','z21'].every(id=>m.some(b=>b.id===id)),
     msg: '🎄 Adult family しゅうごう！まだクリスマスじゃない！' },
   { check: m => m.filter(b=>b.part!=='ライブハウス').length===2 && m.some(b=>b.id==='z01'||b.id==='z17'),
-    msg: '💪 カザマは ふたり組だと 最強らしい！' },
+    msg: '🎶 1人よりも2人がいい' },
   { check: m => m.filter(b=>b.part!=='ライブハウス').length>=3 && m.some(b=>b.id==='z01'||b.id==='z17'),
-    msg: '🤐 カザマが 3人以上の会話に 苦戦している…' },
+    msg: '🎶 ３人よりは独りでいい' },
   { check: m => m.some(b=>b.id==='z05') && m.some(b=>b.female),
     msg: '😍 歯グキ馬が 女子と組めて 歯グキ全開で よろこんでいる！' },
   { check: m => m.some(b=>b.part==='ライブハウス') && m.some(b=>b.part!=='ライブハウス' && b.region && m.some(v=>v.part==='ライブハウス' && v.region===b.region)),
@@ -1755,7 +1790,8 @@ function renderBandPhoto(){
     return `<div class="member" style="${style}">${content}</div>`;
   }).join('');
   const typedName = document.getElementById('bandNameInput').value.trim();
-  nameEl.textContent = typedName || state.band.name || '';
+  const fb = exactFullBand(state.band.members);
+  nameEl.textContent = typedName || (fb ? fb.name : '') || state.band.name || '';
 }
 document.getElementById('bandNameInput').addEventListener('input', ()=>{
   const nameEl = document.getElementById('bandPhotoName');
