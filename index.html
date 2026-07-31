@@ -968,6 +968,11 @@ function computeBandPower(memberIds){
   if(kazamaIn && players.length >= 3) power = Math.min(power, 17);
   // ムロフェス編成：助っ人ドラムへの感謝はコミュニケーションの壁をこえる
   if(isMurofesLineup(memberIds)) power = Math.max(power, 75);
+  // ありがとう金玉：キンタマタカフミ＋Adult familyは感謝のちからで強い
+  {
+    const idSet = new Set(memberIds||[]);
+    if(idSet.has('z17') && ['z19','z20','z21'].every(id=>idSet.has(id))) power = Math.max(power, 78);
+  }
   return Math.max(0, Math.min(100, power)); // 上限は常に100（人数に関係なく変わらない）
 }
 
@@ -1737,37 +1742,42 @@ function isMurofesLineup(memberIds){
 // 特定の組み合わせで出る特殊メッセージ（上から順に判定して、当てはまったものを表示）
 const COMBO_MESSAGES = [
   { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z17'),
-    msg: '👀 カザマが2人いる…！？' },
+    msg: 'カザマが2人いる…！？' },
   { check: m => isMurofesLineup(m.map(b=>b.id)),
-    msg: '🙏 ムロフェスの時はありがとう！' },
+    msg: 'ムロフェスの時はありがとう！' },
+  { check: m => m.some(b=>b.id==='z17') && ['z19','z20','z21'].every(id=>m.some(b=>b.id===id)),
+    msg: 'ありがとう金玉！' },
   { check: m => ['z01','z02','z03','z04'].every(id=>m.some(b=>b.id===id)),
-    msg: '🔥 3markets[ ]が そろった！今日は解散しないらしい！' },
+    msg: '3markets[ ]が そろった！今日は解散しないらしい！' },
   { check: m => ['z05','z06','z07','z08'].every(id=>m.some(b=>b.id===id)),
-    msg: '🦷 Gum-9 かんぜんたい！歯グキが かがやいている！' },
+    msg: 'Gum-9 かんぜんたい！歯グキが かがやいている！' },
   { check: m => ['z09','z10','z11'].every(id=>m.some(b=>b.id===id)),
-    msg: '🐣 the paddles そろい踏み！ひよこが 世界征服を たくらんでいる！' },
+    msg: 'the paddles そろい踏み！ひよこが 世界征服を たくらんでいる！' },
   { check: m => ['z12','z13','z14'].every(id=>m.some(b=>b.id===id)),
-    msg: '🌆 夕方と猫だ！あたりが 夕方になった！' },
+    msg: '夕方と猫だ！あたりが 夕方になった！' },
   { check: m => ['z19','z20','z21'].every(id=>m.some(b=>b.id===id)),
-    msg: '🎄 Adult family しゅうごう！まだクリスマスじゃない！' },
-  { check: m => m.filter(b=>b.part!=='ライブハウス').length===2 && m.some(b=>b.id==='z01'||b.id==='z17'),
-    msg: '🎶 1人よりも2人がいい' },
-  { check: m => m.filter(b=>b.part!=='ライブハウス').length>=3 && m.some(b=>b.id==='z01'||b.id==='z17'),
-    msg: '🎶 ３人よりは独りでいい' },
+    msg: 'Adult family しゅうごう！まだクリスマスじゃない！' },
+  { check: m => m.some(b=>b.id==='z17') && m.filter(b=>b.part!=='ライブハウス').length>=2,
+    msg: m => `金玉が${m.filter(b=>b.part!=='ライブハウス').length*2}つになった` },
+  { check: m => m.filter(b=>b.part!=='ライブハウス').length===2 && m.some(b=>b.id==='z01'),
+    msg: '1人よりも2人がいい' },
+  { check: m => m.filter(b=>b.part!=='ライブハウス').length>=3 && m.some(b=>b.id==='z01'),
+    msg: '３人よりは独りでいい' },
   { check: m => m.some(b=>b.id==='z05') && m.some(b=>b.female),
-    msg: '😍 歯グキ馬が 女子と組めて 歯グキ全開で よろこんでいる！' },
+    msg: '歯グキ馬が 女子と組めて 歯グキ全開で よろこんでいる！' },
   { check: m => m.some(b=>b.part==='ライブハウス') && m.some(b=>b.part!=='ライブハウス' && b.region && m.some(v=>v.part==='ライブハウス' && v.region===b.region)),
-    msg: '🏠 地元凱旋ライブだ！ハコが 大よろこびしている！' },
+    msg: '地元凱旋ライブだ！ハコが 大よろこびしている！' },
   { check: m => m.length>=2 && m.every(b=>b.part==='ライブハウス'),
-    msg: '🎪 ハコとハコで サーキットフェスが はじまった！' },
+    msg: 'ハコとハコで サーキットフェスが はじまった！' },
   { check: m => m.length===1 && m.every(b=>b.part==='ライブハウス'),
-    msg: '🤔 ハコだけでは ライブは できないみたい…' },
+    msg: 'ハコだけでは ライブは できないみたい…' },
 ];
 function comboMessageFor(memberIds){
   const m = (memberIds||[]).map(id=>BANDMEN_BY_ID[id]).filter(Boolean);
   if(m.length===0) return '';
   const hit = COMBO_MESSAGES.find(c=>{ try{ return c.check(m); }catch(e){ return false; } });
-  return hit ? hit.msg : '';
+  if(!hit) return '';
+  return typeof hit.msg === 'function' ? hit.msg(m) : hit.msg;
 }
 function updateBandPowerDisplay(){
   document.getElementById('bandPowerVal').textContent = computeBandPower(state.band.members);
