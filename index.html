@@ -671,8 +671,9 @@ const CUSTOM_BANDMEN = {
     desc: 'うさぎはさみしいと死んでしまうというが、このうさぎはガジェットに触れていないと死んでしまうタイプ。カメラを与えておこう。'
   },
   // No.05〜15：シルエット表示のとき人型に見えるよう、人物系の絵文字に統一
-  z05: {
+  z91: {
     name: '歯グキ馬',
+    rarity: 'N',
     region: '関東',
     img: IMG_GUM_VOCAL,
     part: 'ボーカル',
@@ -680,8 +681,9 @@ const CUSTOM_BANDMEN = {
     band: 'Gum-9',
     desc: '笑うたびに立派な歯グキがこんにちは。歯グキから響く歌声はきょうも絶好調。ギャルを見ると歯茎が大きくなる。'
   },
-  z06: {
+  z92: {
     name: 'タカハシユウジラフ',
+    rarity: 'N',
     region: '関東',
     img: IMG_GUM_GUITAR,
     part: 'ギター',
@@ -689,8 +691,9 @@ const CUSTOM_BANDMEN = {
     band: 'Gum-9',
     desc: '歌を引き立てるためなら首がどこまでも伸びる。首が長すぎて、弾いたギターソロが地上に届くまで3秒かかる。本人は特に気にしていない。'
   },
-  z07: {
+  z93: {
     name: 'コバヤシタヌキン',
+    rarity: 'N',
     region: '関東',
     img: IMG_GUM_BASS,
     part: 'ベース',
@@ -698,8 +701,9 @@ const CUSTOM_BANDMEN = {
     band: 'Gum-9',
     desc: '元野球少年。フォアボールで出塁したまま、なぜかベーシストになっていた。人は化かさないが、ベースラインだけは化ける。今日も送りバントの構えで低音を支える。'
   },
-  z08: {
+  z94: {
     name: 'コガパンダイゾウ',
+    rarity: 'N',
     region: '関東',
     img: IMG_GUM_DRUM,
     part: 'ドラム',
@@ -707,8 +711,9 @@ const CUSTOM_BANDMEN = {
     band: 'Gum-9',
     desc: '曲に隙間を見つけると埋めずにはいられない。笹の食べ残しも隙間に埋める。ついでに歯茎の隙間にもなにかを詰めたいと思っている。'
   },
-  z09: {
+  z95: {
     name: 'ピヨ須賀皇司',
+    rarity: 'N',
     region: '関西',
     img: IMG_PDL_VOCAL,
     part: 'ボーカル',
@@ -716,8 +721,9 @@ const CUSTOM_BANDMEN = {
     band: 'the paddles',
     desc: '元銀行員のひよこ。お札を数えるスピードは今もバンドマン界隈で敵なしで、数えるスピード並みに喋るスピードが速い。話してると２倍速のYouTubeを観てる気持ちになれてお得。'
   },
-  z10: {
+  z96: {
     name: 'マツシマヒョウ大',
+    rarity: 'N',
     region: '関西',
     img: IMG_PDL_BASS,
     part: 'ベース',
@@ -725,8 +731,9 @@ const CUSTOM_BANDMEN = {
     band: 'the paddles',
     desc: 'クロヒョウなのに走らない。低音だけで獲物をしとめるタイプ。重低音を浴びるほど毛づやが良くなるといわれている。'
   },
-  z11: {
+  z97: {
     name: 'ケンキツネ',
+    rarity: 'N',
     region: '関西',
     img: IMG_PDL_DRUM,
     part: 'ドラム',
@@ -734,8 +741,9 @@ const CUSTOM_BANDMEN = {
     band: 'the paddles',
     desc: '2025年、人間界に加入した新入りのキツネ。化けるのが上手すぎて、まだ誰も正体に気づいていない。スネアを叩くたび尻尾がちょっと増える。'
   },
-  z12: {
+  z98: {
     name: 'アキムネコ亮太朗',
+    rarity: 'N',
     region: '関西',
     img: IMG_YGN_VOCAL,
     part: 'ボーカル',
@@ -743,8 +751,9 @@ const CUSTOM_BANDMEN = {
     band: '夕方と猫',
     desc: '夕方にだけ現れて、テレキャスで日常のスキマを歌う猫。届け方を間違えると歌は届かないことを知っているので、毎回風向きを確認してから歌い出すようにしている。'
   },
-  z13: {
+  z99: {
     name: 'まひロバ',
+    rarity: 'N',
     region: '関西',
     img: IMG_YGN_BASS,
     part: 'ベース',
@@ -752,8 +761,9 @@ const CUSTOM_BANDMEN = {
     band: '夕方と猫',
     desc: '荷物のかわりに低音を運んでいるロバ。歩くのはゆっくりだが、リズムには一度も遅れたことがない。'
   },
-  z14: {
+  z100: {
     name: 'やぎヤギ',
+    rarity: 'N',
     region: '関西',
     female: true,
     img: IMG_YGN_DRUM,
@@ -932,7 +942,7 @@ function computeBandPower(memberIds){
   synergy += Math.min(venueBoost, 0.6); // ライブハウス効果は合計+60%まで
 
   // 相性④：歯グキ馬は女性メンバーが多いほど掛け算的に強くなる（1人につき×1.25）
-  if(players.some(bm=>bm.id === 'z05')){
+  if(players.some(bm=>bm.id === 'z91')){
     const ladies = players.filter(bm=>bm.female).length;
     if(ladies > 0) synergy *= Math.pow(1.25, ladies);
   }
@@ -1703,9 +1713,9 @@ function toggleBandMember(id){
 // 実在バンドの正式編成（メンバーが完全一致すると正式結成あつかいになる）
 const FULL_BANDS = [
   { name: '3markets[ ]',  ids: ['z01','z02','z03','z04'] },
-  { name: 'Gum-9',        ids: ['z05','z06','z07','z08'] },
-  { name: 'the paddles',  ids: ['z09','z10','z11'] },
-  { name: '夕方と猫',      ids: ['z12','z13','z14'] },
+  { name: 'Gum-9',        ids: ['z91','z92','z93','z94'] },
+  { name: 'the paddles',  ids: ['z95','z96','z97'] },
+  { name: '夕方と猫',      ids: ['z98','z99','z100'] },
 ];
 function exactFullBand(memberIds){
   const set = new Set((memberIds||[]).filter(id=>{
@@ -1728,7 +1738,7 @@ function isMurofesLineup(memberIds){
 const COMBO_MESSAGES = [
   { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z17'),
     msg: 'カザマが2人いる…！？' },
-  { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z05'),
+  { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z91'),
     msg: 'おまえといるなら1人の方がマシ♪' },
   { check: m => isMurofesLineup(m.map(b=>b.id)),
     msg: 'ムロフェスの時はありがとう！' },
@@ -1740,11 +1750,11 @@ const COMBO_MESSAGES = [
     msg: 'ツインドラムで全楽曲がメタルに！' },
   { check: m => ['z01','z02','z03','z04'].every(id=>m.some(b=>b.id===id)),
     msg: '3markets[ ]' },
-  { check: m => ['z05','z06','z07','z08'].every(id=>m.some(b=>b.id===id)),
+  { check: m => ['z91','z92','z93','z94'].every(id=>m.some(b=>b.id===id)),
     msg: 'Gum-9' },
-  { check: m => ['z09','z10','z11'].every(id=>m.some(b=>b.id===id)),
+  { check: m => ['z95','z96','z97'].every(id=>m.some(b=>b.id===id)),
     msg: 'the paddles' },
-  { check: m => ['z12','z13','z14'].every(id=>m.some(b=>b.id===id)),
+  { check: m => ['z98','z99','z100'].every(id=>m.some(b=>b.id===id)),
     msg: '夕方と猫' },
   { check: m => m.some(b=>b.id==='z17') && m.filter(b=>b.part!=='ライブハウス').length>=2,
     msg: m => `金玉が${m.filter(b=>b.part!=='ライブハウス').length*2}つになった` },
@@ -1752,7 +1762,7 @@ const COMBO_MESSAGES = [
     msg: '1人よりも2人がいい' },
   { check: m => m.filter(b=>b.part!=='ライブハウス').length>=3 && m.some(b=>b.id==='z01'),
     msg: '３人よりは独りでいい' },
-  { check: m => m.some(b=>b.id==='z05') && m.some(b=>b.female),
+  { check: m => m.some(b=>b.id==='z91') && m.some(b=>b.female),
     msg: '歯グキ馬が 女子と組めて 歯グキ全開で よろこんでいる！' },
   { check: m => m.some(b=>b.part==='ライブハウス') && m.some(b=>b.part!=='ライブハウス' && b.region && m.some(v=>v.part==='ライブハウス' && v.region===b.region)),
     msg: '地元凱旋ライブだ！ハコが 大よろこびしている！' },
