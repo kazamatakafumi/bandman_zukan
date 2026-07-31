@@ -671,7 +671,7 @@ const CUSTOM_BANDMEN = {
     desc: 'うさぎはさみしいと死んでしまうというが、このうさぎはガジェットに触れていないと死んでしまうタイプ。カメラを与えておこう。'
   },
   // No.05〜15：シルエット表示のとき人型に見えるよう、人物系の絵文字に統一
-  z91: {
+  z20: {
     name: '歯グキ馬',
     rarity: 'N',
     region: '関東',
@@ -681,7 +681,7 @@ const CUSTOM_BANDMEN = {
     band: 'Gum-9',
     desc: '笑うたびに立派な歯グキがこんにちは。歯グキから響く歌声はきょうも絶好調。ギャルを見ると歯茎が大きくなる。'
   },
-  z92: {
+  z21: {
     name: 'タカハシユウジラフ',
     rarity: 'N',
     region: '関東',
@@ -691,7 +691,7 @@ const CUSTOM_BANDMEN = {
     band: 'Gum-9',
     desc: '歌を引き立てるためなら首がどこまでも伸びる。首が長すぎて、弾いたギターソロが地上に届くまで3秒かかる。本人は特に気にしていない。'
   },
-  z93: {
+  z22: {
     name: 'コバヤシタヌキン',
     rarity: 'N',
     region: '関東',
@@ -701,7 +701,7 @@ const CUSTOM_BANDMEN = {
     band: 'Gum-9',
     desc: '元野球少年。フォアボールで出塁したまま、なぜかベーシストになっていた。人は化かさないが、ベースラインだけは化ける。今日も送りバントの構えで低音を支える。'
   },
-  z94: {
+  z23: {
     name: 'コガパンダイゾウ',
     rarity: 'N',
     region: '関東',
@@ -711,7 +711,7 @@ const CUSTOM_BANDMEN = {
     band: 'Gum-9',
     desc: '曲に隙間を見つけると埋めずにはいられない。笹の食べ残しも隙間に埋める。ついでに歯茎の隙間にもなにかを詰めたいと思っている。'
   },
-  z95: {
+  z24: {
     name: 'ピヨ須賀皇司',
     rarity: 'N',
     region: '関西',
@@ -721,7 +721,7 @@ const CUSTOM_BANDMEN = {
     band: 'the paddles',
     desc: '元銀行員のひよこ。お札を数えるスピードは今もバンドマン界隈で敵なしで、数えるスピード並みに喋るスピードが速い。話してると２倍速のYouTubeを観てる気持ちになれてお得。'
   },
-  z96: {
+  z25: {
     name: 'マツシマヒョウ大',
     rarity: 'N',
     region: '関西',
@@ -731,7 +731,7 @@ const CUSTOM_BANDMEN = {
     band: 'the paddles',
     desc: 'クロヒョウなのに走らない。低音だけで獲物をしとめるタイプ。重低音を浴びるほど毛づやが良くなるといわれている。'
   },
-  z97: {
+  z26: {
     name: 'ケンキツネ',
     rarity: 'N',
     region: '関西',
@@ -741,7 +741,7 @@ const CUSTOM_BANDMEN = {
     band: 'the paddles',
     desc: '2025年、人間界に加入した新入りのキツネ。化けるのが上手すぎて、まだ誰も正体に気づいていない。スネアを叩くたび尻尾がちょっと増える。'
   },
-  z98: {
+  z27: {
     name: 'アキムネコ亮太朗',
     rarity: 'N',
     region: '関西',
@@ -751,7 +751,7 @@ const CUSTOM_BANDMEN = {
     band: '夕方と猫',
     desc: '夕方にだけ現れて、テレキャスで日常のスキマを歌う猫。届け方を間違えると歌は届かないことを知っているので、毎回風向きを確認してから歌い出すようにしている。'
   },
-  z99: {
+  z28: {
     name: 'まひロバ',
     rarity: 'N',
     region: '関西',
@@ -761,7 +761,7 @@ const CUSTOM_BANDMEN = {
     band: '夕方と猫',
     desc: '荷物のかわりに低音を運んでいるロバ。歩くのはゆっくりだが、リズムには一度も遅れたことがない。'
   },
-  z100: {
+  z29: {
     name: 'やぎヤギ',
     rarity: 'N',
     region: '関西',
@@ -942,7 +942,7 @@ function computeBandPower(memberIds){
   synergy += Math.min(venueBoost, 0.6); // ライブハウス効果は合計+60%まで
 
   // 相性④：歯グキ馬は女性メンバーが多いほど掛け算的に強くなる（1人につき×1.25）
-  if(players.some(bm=>bm.id === 'z91')){
+  if(players.some(bm=>bm.id === 'z20')){
     const ladies = players.filter(bm=>bm.female).length;
     if(ladies > 0) synergy *= Math.pow(1.25, ladies);
   }
@@ -1120,26 +1120,31 @@ document.querySelectorAll('nav.tabbar button').forEach(btn=>{
    5. ずかん表示
    ========================================================= */
 
-// 未登録バンドマン用の人型シルエット（立って演奏している姿・パートごとに数種類）
-const SILHOUETTES = {
-  guitar: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="50" cy="15" r="11"/><path d="M39 27 Q50 24 61 27 L64 62 Q50 66 36 62 Z"/><rect x="39" y="61" width="9" height="30" rx="4"/><rect x="53" y="61" width="9" height="30" rx="4"/><ellipse cx="61" cy="52" rx="13" ry="9" transform="rotate(-24 61 52)"/><rect x="24" y="33" width="36" height="4.5" rx="2" transform="rotate(28 42 35)"/><path d="M35 34 q-4 8 3 14" stroke="#4a3b57" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
-  bass: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="50" cy="15" r="11"/><path d="M39 27 Q50 24 61 27 L64 62 Q50 66 36 62 Z"/><rect x="39" y="61" width="9" height="30" rx="4"/><rect x="53" y="61" width="9" height="30" rx="4"/><ellipse cx="63" cy="56" rx="11" ry="8" transform="rotate(-14 63 56)"/><rect x="18" y="38" width="44" height="4" rx="2" transform="rotate(16 40 40)"/><path d="M34 36 q-5 9 2 15" stroke="#4a3b57" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
-  vocal: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="48" cy="15" r="11"/><path d="M37 27 Q48 24 59 27 L62 62 Q48 66 34 62 Z"/><rect x="37" y="61" width="9" height="30" rx="4"/><rect x="51" y="61" width="9" height="30" rx="4"/><rect x="56" y="18" width="22" height="6" rx="3" transform="rotate(-38 67 21)"/><circle cx="76" cy="12" r="5"/><rect x="72" y="30" width="3.5" height="58" rx="1.5"/><path d="M64 88 h20 l-3 4 h-14 z"/></svg>`,
-  drums: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="50" cy="17" r="11"/><path d="M39 29 Q50 26 61 29 L63 60 Q50 64 37 60 Z"/><rect x="39" y="59" width="9" height="20" rx="4"/><rect x="52" y="59" width="9" height="20" rx="4"/><rect x="56" y="18" width="24" height="4" rx="2" transform="rotate(-42 68 20)"/><rect x="20" y="26" width="24" height="4" rx="2" transform="rotate(34 32 28)"/><path d="M28 78 h44 l-3 14 h-38 z"/><rect x="46" y="90" width="8" height="8"/></svg>`,
-  keys: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="50" cy="15" r="11"/><path d="M39 27 Q50 24 61 27 L63 58 Q50 62 37 58 Z"/><rect x="39" y="57" width="9" height="32" rx="4"/><rect x="52" y="57" width="9" height="32" rx="4"/><path d="M26 48 h48 v10 h-48 z"/><rect x="30" y="48" width="3" height="6"/><rect x="38" y="48" width="3" height="6"/><rect x="46" y="48" width="3" height="6"/><rect x="54" y="48" width="3" height="6"/><rect x="62" y="48" width="3" height="6"/><rect x="24" y="58" width="4" height="26" rx="2"/><rect x="72" y="58" width="4" height="26" rx="2"/></svg>`,
-  horn: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="46" cy="16" r="11"/><path d="M35 28 Q46 25 57 28 L60 62 Q46 66 32 62 Z"/><rect x="35" y="61" width="9" height="30" rx="4"/><rect x="49" y="61" width="9" height="30" rx="4"/><rect x="56" y="20" width="16" height="5" rx="2.5"/><path d="M72 12 l14 10 l-14 10 z"/></svg>`,
-  dance: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="52" cy="14" r="11"/><path d="M42 26 Q52 23 62 26 L64 56 Q51 60 39 56 Z"/><rect x="30" y="16" width="22" height="6" rx="3" transform="rotate(-30 41 19)"/><rect x="60" y="26" width="22" height="6" rx="3" transform="rotate(24 71 29)"/><rect x="36" y="55" width="9" height="32" rx="4" transform="rotate(14 40 71)"/><rect x="55" y="55" width="9" height="32" rx="4" transform="rotate(-12 60 71)"/></svg>`
-};
-const SIL_BY_PART = {
-  'ボーカル':'vocal', 'ギター':'guitar', 'ベース':'bass', 'ドラム':'drums',
-  'キーボード':'keys', 'DJ':'keys', 'ラッパー':'vocal', 'ストリングス':'guitar',
-  'ホーン隊':'horn', 'ダンサー':'dance', 'プロデューサー':'keys', '弾き語り':'guitar', 'バンド':'dance'
-};
-const SIL_KEYS = Object.keys(SILHOUETTES);
+// 未登録バンドマン用シルエット：登録済みキャラの絵を灰色シルエットとして流用する
+// （同じパートの絵からIDごとに固定で選ぶ。新しい画像キャラを足したらこのプールにも追加すると反映される）
+const SIL_POOL = [
+  { img: IMG_HACHIMITSU_TAKAFUMI, part: 'ボーカル' },
+  { img: IMG_GUM_VOCAL,           part: 'ボーカル' },
+  { img: IMG_PDL_VOCAL,           part: 'ボーカル' },
+  { img: IMG_YGN_VOCAL,           part: 'ボーカル' },
+  { img: IMG_YAHAGI_AKIRAKEN,     part: 'ギター' },
+  { img: IMG_GUM_GUITAR,          part: 'ギター' },
+  { img: IMG_TAMURA_ZOU,          part: 'ベース' },
+  { img: IMG_GUM_BASS,            part: 'ベース' },
+  { img: IMG_PDL_BASS,            part: 'ベース' },
+  { img: IMG_YGN_BASS,            part: 'ベース' },
+  { img: IMG_MASATON_RABBIT,      part: 'ドラム' },
+  { img: IMG_GUM_DRUM,            part: 'ドラム' },
+  { img: IMG_PDL_DRUM,            part: 'ドラム' },
+  { img: IMG_YGN_DRUM,            part: 'ドラム' },
+  { img: IMG_BIWAKO,              part: '弾き語り' },
+  { img: IMG_KINTAMA,             part: '弾き語り' }
+];
 function silhouetteFor(bm, i){
-  const key = SIL_BY_PART[bm.part] || SIL_KEYS[i % SIL_KEYS.length];
-  const flip = i % 2 === 1;
-  return `<span style="display:inline-block;${flip?'transform:scaleX(-1);':''}">${SILHOUETTES[key]}</span>`;
+  const samePart = SIL_POOL.filter(p=>p.part === bm.part);
+  const list = samePart.length ? samePart : SIL_POOL;
+  const pick = list[i % list.length];
+  return `<img src="${pick.img}" alt="">`;
 }
 
 function renderZukanGrid(){
@@ -1713,9 +1718,9 @@ function toggleBandMember(id){
 // 実在バンドの正式編成（メンバーが完全一致すると正式結成あつかいになる）
 const FULL_BANDS = [
   { name: '3markets[ ]',  ids: ['z01','z02','z03','z04'] },
-  { name: 'Gum-9',        ids: ['z91','z92','z93','z94'] },
-  { name: 'the paddles',  ids: ['z95','z96','z97'] },
-  { name: '夕方と猫',      ids: ['z98','z99','z100'] },
+  { name: 'Gum-9',        ids: ['z20','z21','z22','z23'] },
+  { name: 'the paddles',  ids: ['z24','z25','z26'] },
+  { name: '夕方と猫',      ids: ['z27','z28','z29'] },
 ];
 function exactFullBand(memberIds){
   const set = new Set((memberIds||[]).filter(id=>{
@@ -1738,7 +1743,7 @@ function isMurofesLineup(memberIds){
 const COMBO_MESSAGES = [
   { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z17'),
     msg: 'カザマが2人いる…！？' },
-  { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z91'),
+  { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z20'),
     msg: 'おまえといるなら1人の方がマシ♪' },
   { check: m => isMurofesLineup(m.map(b=>b.id)),
     msg: 'ムロフェスの時はありがとう！' },
@@ -1750,11 +1755,11 @@ const COMBO_MESSAGES = [
     msg: 'ツインドラムで全楽曲がメタルに！' },
   { check: m => ['z01','z02','z03','z04'].every(id=>m.some(b=>b.id===id)),
     msg: '3markets[ ]' },
-  { check: m => ['z91','z92','z93','z94'].every(id=>m.some(b=>b.id===id)),
+  { check: m => ['z20','z21','z22','z23'].every(id=>m.some(b=>b.id===id)),
     msg: 'Gum-9' },
-  { check: m => ['z95','z96','z97'].every(id=>m.some(b=>b.id===id)),
+  { check: m => ['z24','z25','z26'].every(id=>m.some(b=>b.id===id)),
     msg: 'the paddles' },
-  { check: m => ['z98','z99','z100'].every(id=>m.some(b=>b.id===id)),
+  { check: m => ['z27','z28','z29'].every(id=>m.some(b=>b.id===id)),
     msg: '夕方と猫' },
   { check: m => m.some(b=>b.id==='z17') && m.filter(b=>b.part!=='ライブハウス').length>=2,
     msg: m => `金玉が${m.filter(b=>b.part!=='ライブハウス').length*2}つになった` },
@@ -1762,7 +1767,7 @@ const COMBO_MESSAGES = [
     msg: '1人よりも2人がいい' },
   { check: m => m.filter(b=>b.part!=='ライブハウス').length>=3 && m.some(b=>b.id==='z01'),
     msg: '３人よりは独りでいい' },
-  { check: m => m.some(b=>b.id==='z91') && m.some(b=>b.female),
+  { check: m => m.some(b=>b.id==='z20') && m.some(b=>b.female),
     msg: '歯グキ馬が 女子と組めて 歯グキ全開で よろこんでいる！' },
   { check: m => m.some(b=>b.part==='ライブハウス') && m.some(b=>b.part!=='ライブハウス' && b.region && m.some(v=>v.part==='ライブハウス' && v.region===b.region)),
     msg: '地元凱旋ライブだ！ハコが 大よろこびしている！' },
