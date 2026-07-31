@@ -507,7 +507,7 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
         </div>
         <div class="band-power-row mt8">
           <span>バンドパワー</span>
-          <b id="bandPowerVal">0</b><span class="small"> / 100</span>
+          <b id="bandPowerVal">0</b><span class="small"> / 10000</span>
         </div>
         <div class="small center" id="comboMsg" style="min-height:1.4em; color:var(--pink); font-weight:700;"></div>
         <button class="btn gold mt8" id="btnRegisterBand">このバンドを登録する</button>
@@ -877,7 +877,7 @@ const PART_HIRAGANA = {
 
 // バンドパワーの計算に使うレア度別のパワー
 // 平均をベースにすることで、人数が何人でも上限（100）が変わらないようにしている
-const BASE_POWER_BY_RARITY = {N:18, R:34, SR:52, UR:74, SP:100};
+const BASE_POWER_BY_RARITY = {N:1800, R:3400, SR:5200, UR:7400, SP:10000};
 function computeBandPower(memberIds){
   const members = (memberIds||[]).map(id=>BANDMEN_BY_ID[id]).filter(Boolean);
   if(members.length === 0) return 0;
@@ -890,17 +890,19 @@ function computeBandPower(memberIds){
   // 2つ以上あつまると「サーキットフェス」になって、ハコの数だけ強くなる
   if(players.length === 0){
     if(venues.length < 2) return 0;
-    let fes = venues.length * 20;
+    let fes = venues.length * 2000;
     const regions = venues.map(v=>v.region).filter(Boolean);
     if(regions.length === venues.length && new Set(regions).size === 1){
       fes *= 1.2; // 同じ地方のハコどうしなら本物のサーキットイベント
     }
-    return Math.max(0, Math.min(100, Math.round(fes)));
+    return Math.max(0, Math.min(10000, Math.round(fes)));
   }
 
   // 基礎値：レア度の「平均」（合計にすると人数が多いほど有利になってしまうため）
-  // 「バンドでひとつ」のキャラ（Arakezuri、Adult familyなど）は、それ自体が完成されたバンドなので基礎値60
-  const baseOf = bm => bm.part === 'バンド' ? 60 : (BASE_POWER_BY_RARITY[bm.rarity]||0);
+  // 「バンドでひとつ」のキャラ（Arakezuri、Adult familyなど）は、それ自体が完成されたバンドなので基礎値6000
+  // さらに、ひとりひとりに小さな個体差（idから決まる+0〜99の固有値）を持たせる
+  const indivBonus = bm => { let h=0; const id=bm.id||''; for(let i=0;i<id.length;i++){ h=(h*31+id.charCodeAt(i))>>>0; } return h%100; };
+  const baseOf = bm => (bm.part === 'バンド' ? 6000 : (BASE_POWER_BY_RARITY[bm.rarity]||0)) + indivBonus(bm);
   const avg = players.reduce((sum,bm)=> sum + baseOf(bm), 0) / players.length;
 
   // 相性①：パートがかぶっていないほど良い（全員バラバラなら1.0倍、かぶるほど最大0.7倍まで低下）
@@ -945,19 +947,19 @@ function computeBandPower(memberIds){
   let power = Math.round(avg * synergy);
   // 正式編成ボーナス：実在バンドがそのまま組めたら、適当な寄せ集めよりちゃんと強い
   const fullBand = exactFullBand(memberIds);
-  if(fullBand) power = Math.max(power, 80);
-  // ３人よりは独りでいい：カザマ入りの3人以上バンドは、独りのカザマ（18）より必ず弱くなる
-  if(kazamaIn && players.length >= 3) power = Math.min(power, 17);
+  if(fullBand) power = Math.max(power, 8000);
+  // ３人よりは独りでいい：カザマ入りの3人以上バンドは、独りのカザマ（約1800）より必ず弱くなる
+  if(kazamaIn && players.length >= 3) power = Math.min(power, 1700);
   // ムロフェス編成：助っ人ドラムへの感謝はコミュニケーションの壁をこえる
-  if(isMurofesLineup(memberIds)) power = Math.max(power, 75);
+  if(isMurofesLineup(memberIds)) power = Math.max(power, 7500);
   // ありがとう金玉：キンタマタカフミ＋Adult familyは感謝のちからで強い
   {
     const idSet = new Set(memberIds||[]);
-    if(idSet.has('z17') && idSet.has('z19')) power = Math.max(power, 78);
+    if(idSet.has('z17') && idSet.has('z19')) power = Math.max(power, 7800);
     // 滋賀！！！：Arakezuri＋びわ湖くんは滋賀のちからで めっちゃ強い
-    if(idSet.has('z15') && idSet.has('z16')) power = Math.max(power, 90);
+    if(idSet.has('z15') && idSet.has('z16')) power = Math.max(power, 9000);
   }
-  return Math.max(0, Math.min(100, power)); // 上限は常に100（人数に関係なく変わらない）
+  return Math.max(0, Math.min(10000, power)); // 上限は常に10000（人数に関係なく変わらない）
 }
 
 /* =========================================================
@@ -1160,13 +1162,8 @@ function openInsectModal(id){
   document.getElementById('modalNo').textContent = 'No.' + String(BANDMEN.indexOf(bm)+1).padStart(2,'0');
   document.getElementById('modalName').textContent = owned ? bm.name : '？？？';
   const rt = document.getElementById('modalRarity');
-  if(bm.rarity === 'N'){
-    rt.style.display = 'none';
-  } else {
-    rt.style.display = '';
-    rt.textContent = RARITY_LABEL[bm.rarity];
-    rt.className = 'rarity-tag ' + bm.rarity;
-  }
+  // レア度はパワー計算にだけ使い、表示には出さない
+  rt.style.display = 'none';
   document.getElementById('modalPart').textContent = owned ? (PART_HIRAGANA[bm.part] || bm.part) : '';
   const icon = document.getElementById('modalIcon');
   icon.innerHTML = bm.img ? `<img src="${bm.img}" alt="">` : (owned ? bm.emoji : silhouetteFor(bm, BANDMEN.indexOf(bm)));
@@ -1735,13 +1732,13 @@ const COMBO_MESSAGES = [
   { check: m => m.some(b=>b.id==='z15') && m.some(b=>b.id==='z16'),
     msg: '滋賀！！！' },
   { check: m => ['z01','z02','z03','z04'].every(id=>m.some(b=>b.id===id)),
-    msg: '3markets[ ]が そろった！今日は解散しないらしい！' },
+    msg: '3markets[ ]' },
   { check: m => ['z05','z06','z07','z08'].every(id=>m.some(b=>b.id===id)),
-    msg: 'Gum-9 かんぜんたい！歯グキが かがやいている！' },
+    msg: 'Gum-9' },
   { check: m => ['z09','z10','z11'].every(id=>m.some(b=>b.id===id)),
-    msg: 'the paddles そろい踏み！ひよこが 世界征服を たくらんでいる！' },
+    msg: 'the paddles' },
   { check: m => ['z12','z13','z14'].every(id=>m.some(b=>b.id===id)),
-    msg: '夕方と猫だ！あたりが 夕方になった！' },
+    msg: '夕方と猫' },
   { check: m => m.some(b=>b.id==='z17') && m.filter(b=>b.part!=='ライブハウス').length>=2,
     msg: m => `金玉が${m.filter(b=>b.part!=='ライブハウス').length*2}つになった` },
   { check: m => m.filter(b=>b.part!=='ライブハウス').length===2 && m.some(b=>b.id==='z01'),
