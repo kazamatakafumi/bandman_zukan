@@ -999,8 +999,8 @@ function computeBandPower(memberIds){
     if(idSet.has('z05') && idSet.has('z06')) power = Math.max(power, 9000);
     // カザマは けいこがいると めっちゃ強くなる（飼い主のちから）
     if(idSet.has('z01') && idSet.has('z10')) power = Math.max(power, 8500);
-    // かざまは金玉とケンカする：カザマ2人が同じバンドにいるとパワーが激減する
-    if(idSet.has('z01') && idSet.has('z07')) power = Math.min(power, 500);
+    // カザマ2人が同じバンドにいると金玉が対消滅してパワーが0になる
+    if(idSet.has('z01') && idSet.has('z07')) power = 0;
   }
   return Math.max(0, Math.min(10000, power)); // 上限は常に10000（人数に関係なく変わらない）
 }
@@ -1775,7 +1775,7 @@ function isMurofesLineup(memberIds){
 // 特定の組み合わせで出る特殊メッセージ（上から順に判定して、当てはまったものを表示）
 const COMBO_MESSAGES = [
   { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z07'),
-    msg: 'かざまは金玉とケンカする！' },
+    msg: 'カザマタカフミの金玉が対消滅した！' },
   { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z11'),
     msg: 'おまえといるなら1人の方がマシ♪' },
   { check: m => isMurofesLineup(m.map(b=>b.id)),
