@@ -149,6 +149,7 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
   font-size:40px; line-height:1; z-index:1;
 }
 .zukan-cell .icon img{width:62px; height:62px; object-fit:contain; display:block;}
+.zukan-cell .icon svg{width:58px; height:58px; display:block; margin:0 auto;}
 .zukan-cell .nm{
   position:absolute; left:4px; right:4px; top:70%; transform:translateY(-50%);
   font-size:9.5px; font-weight:900; text-align:center; line-height:1.25; color:var(--ink);
@@ -202,6 +203,7 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
 .modal h2{font-family:'Mochiy Pop One'; font-size:20px; margin:2px 0 6px; color:var(--ink);}
 .modal .big-icon{font-size:62px; text-align:center; margin:6px 0;}
 .modal .big-icon img{width:110px; height:110px; object-fit:contain; margin:0 auto; display:block;}
+.modal .big-icon svg{width:100px; height:100px; margin:0 auto; display:block;}
 
 /* ---------- スキャナー ---------- */
 .scan-wrap{position:relative; border-radius:18px; overflow:hidden; background:#000; aspect-ratio:3/4; box-shadow:var(--shadow);}
@@ -1005,6 +1007,29 @@ document.querySelectorAll('nav.tabbar button').forEach(btn=>{
 /* =========================================================
    5. ずかん表示
    ========================================================= */
+
+// 未登録バンドマン用の人型シルエット（立って演奏している姿・パートごとに数種類）
+const SILHOUETTES = {
+  guitar: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="50" cy="15" r="11"/><path d="M39 27 Q50 24 61 27 L64 62 Q50 66 36 62 Z"/><rect x="39" y="61" width="9" height="30" rx="4"/><rect x="53" y="61" width="9" height="30" rx="4"/><ellipse cx="61" cy="52" rx="13" ry="9" transform="rotate(-24 61 52)"/><rect x="24" y="33" width="36" height="4.5" rx="2" transform="rotate(28 42 35)"/><path d="M35 34 q-4 8 3 14" stroke="#4a3b57" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
+  bass: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="50" cy="15" r="11"/><path d="M39 27 Q50 24 61 27 L64 62 Q50 66 36 62 Z"/><rect x="39" y="61" width="9" height="30" rx="4"/><rect x="53" y="61" width="9" height="30" rx="4"/><ellipse cx="63" cy="56" rx="11" ry="8" transform="rotate(-14 63 56)"/><rect x="18" y="38" width="44" height="4" rx="2" transform="rotate(16 40 40)"/><path d="M34 36 q-5 9 2 15" stroke="#4a3b57" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
+  vocal: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="48" cy="15" r="11"/><path d="M37 27 Q48 24 59 27 L62 62 Q48 66 34 62 Z"/><rect x="37" y="61" width="9" height="30" rx="4"/><rect x="51" y="61" width="9" height="30" rx="4"/><rect x="56" y="18" width="22" height="6" rx="3" transform="rotate(-38 67 21)"/><circle cx="76" cy="12" r="5"/><rect x="72" y="30" width="3.5" height="58" rx="1.5"/><path d="M64 88 h20 l-3 4 h-14 z"/></svg>`,
+  drums: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="50" cy="17" r="11"/><path d="M39 29 Q50 26 61 29 L63 60 Q50 64 37 60 Z"/><rect x="39" y="59" width="9" height="20" rx="4"/><rect x="52" y="59" width="9" height="20" rx="4"/><rect x="56" y="18" width="24" height="4" rx="2" transform="rotate(-42 68 20)"/><rect x="20" y="26" width="24" height="4" rx="2" transform="rotate(34 32 28)"/><path d="M28 78 h44 l-3 14 h-38 z"/><rect x="46" y="90" width="8" height="8"/></svg>`,
+  keys: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="50" cy="15" r="11"/><path d="M39 27 Q50 24 61 27 L63 58 Q50 62 37 58 Z"/><rect x="39" y="57" width="9" height="32" rx="4"/><rect x="52" y="57" width="9" height="32" rx="4"/><path d="M26 48 h48 v10 h-48 z"/><rect x="30" y="48" width="3" height="6"/><rect x="38" y="48" width="3" height="6"/><rect x="46" y="48" width="3" height="6"/><rect x="54" y="48" width="3" height="6"/><rect x="62" y="48" width="3" height="6"/><rect x="24" y="58" width="4" height="26" rx="2"/><rect x="72" y="58" width="4" height="26" rx="2"/></svg>`,
+  horn: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="46" cy="16" r="11"/><path d="M35 28 Q46 25 57 28 L60 62 Q46 66 32 62 Z"/><rect x="35" y="61" width="9" height="30" rx="4"/><rect x="49" y="61" width="9" height="30" rx="4"/><rect x="56" y="20" width="16" height="5" rx="2.5"/><path d="M72 12 l14 10 l-14 10 z"/></svg>`,
+  dance: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#4a3b57"><circle cx="52" cy="14" r="11"/><path d="M42 26 Q52 23 62 26 L64 56 Q51 60 39 56 Z"/><rect x="30" y="16" width="22" height="6" rx="3" transform="rotate(-30 41 19)"/><rect x="60" y="26" width="22" height="6" rx="3" transform="rotate(24 71 29)"/><rect x="36" y="55" width="9" height="32" rx="4" transform="rotate(14 40 71)"/><rect x="55" y="55" width="9" height="32" rx="4" transform="rotate(-12 60 71)"/></svg>`
+};
+const SIL_BY_PART = {
+  'ボーカル':'vocal', 'ギター':'guitar', 'ベース':'bass', 'ドラム':'drums',
+  'キーボード':'keys', 'DJ':'keys', 'ラッパー':'vocal', 'ストリングス':'guitar',
+  'ホーン隊':'horn', 'ダンサー':'dance', 'プロデューサー':'keys', '弾き語り':'guitar', 'バンド':'dance'
+};
+const SIL_KEYS = Object.keys(SILHOUETTES);
+function silhouetteFor(bm, i){
+  const key = SIL_BY_PART[bm.part] || SIL_KEYS[i % SIL_KEYS.length];
+  const flip = i % 2 === 1;
+  return `<span style="display:inline-block;${flip?'transform:scaleX(-1);':''}">${SILHOUETTES[key]}</span>`;
+}
+
 function renderZukanGrid(){
   const grid = document.getElementById('zukanGrid');
   grid.innerHTML = '';
@@ -1017,10 +1042,10 @@ function renderZukanGrid(){
     const iconStyle = owned
       ? (bm.img ? '' : `filter:hue-rotate(${bm.hue}deg)`)
       : 'filter:brightness(0) opacity(.3);';
-    // 未登録のあいだは中身をネタバレしないよう、全員おなじ人型シルエットにする
+    // 未登録のあいだは中身をネタバレしないよう、演奏中の人型シルエットにする（パートごとに姿がちがう）
     const iconContent = owned
       ? (bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji)
-      : '🧑‍🎤';
+      : silhouetteFor(bm, i);
     cell.innerHTML = `
       <div class="no">No.${String(i+1).padStart(2,'0')}</div>
       <div class="icon" style="${iconStyle}">${iconContent}</div>
@@ -1049,7 +1074,7 @@ function openInsectModal(id){
   }
   document.getElementById('modalPart').textContent = owned ? (PART_HIRAGANA[bm.part] || bm.part) : '';
   const icon = document.getElementById('modalIcon');
-  icon.innerHTML = owned ? (bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji) : '🧑‍🎤';
+  icon.innerHTML = owned ? (bm.img ? `<img src="${bm.img}" alt="">` : bm.emoji) : silhouetteFor(bm, BANDMEN.indexOf(bm));
   icon.style.filter = owned ? (bm.img ? 'none' : `hue-rotate(${bm.hue}deg)`) : 'brightness(0) opacity(.3)';
   const modalDescEl = document.getElementById('modalDesc');
   if(owned){
