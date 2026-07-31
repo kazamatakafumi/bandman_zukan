@@ -971,6 +971,16 @@ function computeBandPower(memberIds){
     synergy -= 0.2;
   }
 
+  // 相性④.45：けいこは猫探ししてるやつ（アキムネコ）には寄りつかない。いっしょだとパワーが下がる
+  if(players.some(bm=>bm.id==='z10') && players.some(bm=>bm.id==='z18')){
+    synergy -= 0.25;
+  }
+
+  // 相性④.46：ケイコはでかい音が嫌い。ライブハウスと同じ編成だとパワーが下がる
+  if(players.some(bm=>bm.id==='z10') && venues.length > 0){
+    synergy -= 0.3;
+  }
+
   // 相性④.5：masatonが他のドラマーと同じバンドに入るとツインドラム編成になり、ちょっと強くなる
   if(players.some(bm=>bm.id==='z04') && players.some(bm=>bm.id!=='z04' && bm.part==='ドラム')){
     synergy += 0.08;
@@ -989,6 +999,10 @@ function computeBandPower(memberIds){
   if(fullBand) power = Math.max(power, 8000);
   // ３人よりは独りでいい：カザマ入りの3人以上バンドは、独りのカザマ（約1800）より必ず弱くなる
   if(kazamaIn && players.length >= 3) power = Math.min(power, 1700);
+  // かざまと歯グキ馬のふたり組は、いっしょにいるだけでパワーがマイナスになる
+  if(players.length === 2 && players.some(bm=>bm.id==='z01') && players.some(bm=>bm.id==='z11')){
+    return -100;
+  }
   // ムロフェス編成：助っ人ドラムへの感謝はコミュニケーションの壁をこえる
   if(isMurofesLineup(memberIds)) power = Math.max(power, 7500);
   // ありがとう金玉：キンタマタカフミ＋Adult familyは感謝のちからで強い
@@ -1786,6 +1800,10 @@ const COMBO_MESSAGES = [
     msg: '滋賀！！！' },
   { check: m => m.some(b=>b.id==='z04') && m.some(b=>b.id!=='z04' && b.part==='ドラム'),
     msg: 'ツインドラムで全楽曲がメタルに！' },
+  { check: m => m.some(b=>b.id==='z10') && m.some(b=>b.id==='z18'),
+    msg: 'けいこは猫探ししてるやつには寄りつかない！' },
+  { check: m => m.some(b=>b.id==='z10') && m.some(b=>b.part==='ライブハウス'),
+    msg: 'ケイコはでかい音が嫌い！' },
   { check: m => ['z01','z02','z03','z04'].every(id=>m.some(b=>b.id===id)),
     msg: '3markets[ ]' },
   { check: m => ['z11','z12','z13','z14'].every(id=>m.some(b=>b.id===id)),
