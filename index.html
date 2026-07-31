@@ -1753,6 +1753,11 @@ function toggleBandMember(id){
       document.getElementById('bandStatus').textContent = 'けいこは唯一無二！この世に1人しかいないかけがえのないもの！';
       return;
     }
+    // けいこと皇司（よく喋るひよこ）は一緒に組めない
+    if((id === 'z10' && state.band.members.includes('z15')) || (id === 'z15' && state.band.members.includes('z10'))){
+      document.getElementById('bandStatus').textContent = 'けいこはよく喋るやつがうるさくて逃げ出した！';
+      return;
+    }
     if(state.band.members.length >= 5){
       document.getElementById('bandStatus').textContent = 'バンドは最大5人までだよ';
       return;
