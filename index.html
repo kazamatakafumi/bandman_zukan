@@ -498,7 +498,7 @@ nav.tabbar button.active{color:var(--pink); background:#fff; box-shadow:0 2px 8p
 
       <div class="card mt14">
         <div class="band-cta-title">🎸 バンドくもうぜ！<span class="small">（1〜5人）</span></div>
-        <p class="small mt8">好きなバンドマンを選んでバンドを組もう。登録すると「バンドパワーランキング」に反映されるよ。</p>
+        <p class="small mt8">好きなバンドマンを選んでバンドを組もう。登録すると「バンドパワーランキング」に反映されるよ。ライブハウスをメンバーに入れると バンドが盛り上がって、地元のバンドマンと組ませると すごいことになるよ。</p>
         <input class="field mt8" id="bandNameInput" maxlength="16" placeholder="バンド名（例：ウナギボーイズ）">
         <div class="band-select-grid" id="bandSelectGrid"></div>
         <div class="band-photo-wrap mt14" id="bandPhotoWrap">
@@ -638,6 +638,7 @@ const IMG_QUATTRO = "data:image/webp;base64,UklGRhKuAABXRUJQVlA4WAoAAAAQAAAAowEA
 const CUSTOM_BANDMEN = {
   z01: {
     name: 'カザマネコフミ',
+    region: '関東',
     img: IMG_HACHIMITSU_TAKAFUMI,
     habitat: 'ライブハウスの控室',
     band: '3markets[ ]',
@@ -645,6 +646,7 @@ const CUSTOM_BANDMEN = {
   },
   z02: {
     name: 'やはぎあきら犬',
+    region: '関東',
     img: IMG_YAHAGI_AKIRAKEN,
     habitat: 'スタジオ帰りのコンビニ',
     band: '3markets[ ]',
@@ -652,6 +654,7 @@ const CUSTOM_BANDMEN = {
   },
   z03: {
     name: 'たむら ぞう',
+    region: '関東',
     img: IMG_TAMURA_ZOU,
     habitat: '対バンの物販列のうしろ',
     band: '3markets[ ]',
@@ -659,6 +662,7 @@ const CUSTOM_BANDMEN = {
   },
   z04: {
     name: 'masaton.rabbit',
+    region: '関東',
     img: IMG_MASATON_RABBIT,
     habitat: '搬入口でアンプを運んでいる最中',
     band: '3markets[ ]',
@@ -667,6 +671,7 @@ const CUSTOM_BANDMEN = {
   // No.05〜15：シルエット表示のとき人型に見えるよう、人物系の絵文字に統一
   z05: {
     name: '歯グキ馬',
+    region: '関東',
     img: IMG_GUM_VOCAL,
     part: 'ボーカル',
     habitat: '花屋の帰り道',
@@ -675,6 +680,7 @@ const CUSTOM_BANDMEN = {
   },
   z06: {
     name: 'タカハシユウジラフ',
+    region: '関東',
     img: IMG_GUM_GUITAR,
     part: 'ギター',
     habitat: 'スタジオの天井のあたり',
@@ -683,6 +689,7 @@ const CUSTOM_BANDMEN = {
   },
   z07: {
     name: 'コバヤシタヌキン',
+    region: '関東',
     img: IMG_GUM_BASS,
     part: 'ベース',
     habitat: 'バッティングセンターの隣のスタジオ',
@@ -691,6 +698,7 @@ const CUSTOM_BANDMEN = {
   },
   z08: {
     name: 'コガパンダイゾウ',
+    region: '関東',
     img: IMG_GUM_DRUM,
     part: 'ドラム',
     habitat: 'リハスタのドラム椅子の上',
@@ -699,6 +707,7 @@ const CUSTOM_BANDMEN = {
   },
   z09: {
     name: 'ピヨ須賀皇司',
+    region: '関西',
     img: IMG_PDL_VOCAL,
     part: 'ボーカル',
     habitat: 'ラジオブースのすみ',
@@ -707,6 +716,7 @@ const CUSTOM_BANDMEN = {
   },
   z10: {
     name: 'マツシマヒョウ大',
+    region: '関西',
     img: IMG_PDL_BASS,
     part: 'ベース',
     habitat: 'スタジオのいちばん暗いところ',
@@ -715,6 +725,7 @@ const CUSTOM_BANDMEN = {
   },
   z11: {
     name: 'ワタナベケンツネ',
+    region: '関西',
     img: IMG_PDL_DRUM,
     part: 'ドラム',
     habitat: '寝屋川の河川敷',
@@ -723,6 +734,7 @@ const CUSTOM_BANDMEN = {
   },
   z12: {
     name: 'アキムネコ亮太朗',
+    region: '関西',
     img: IMG_YGN_VOCAL,
     part: 'ボーカル',
     habitat: '夕方の帰り道の塀の上',
@@ -731,6 +743,7 @@ const CUSTOM_BANDMEN = {
   },
   z13: {
     name: 'このまひロバ',
+    region: '関西',
     img: IMG_YGN_BASS,
     part: 'ベース',
     habitat: '豊中の坂道',
@@ -739,6 +752,7 @@ const CUSTOM_BANDMEN = {
   },
   z14: {
     name: 'やぎヤギ',
+    region: '関西',
     img: IMG_YGN_DRUM,
     part: 'ドラム',
     habitat: 'セトリの紙のちかく',
@@ -747,6 +761,7 @@ const CUSTOM_BANDMEN = {
   },
   z15: {
     name: 'Arakezuri',
+    region: '関西',
     img: IMG_ARAKEZURI,
     part: 'バンド',
     habitat: '滋賀の森',
@@ -755,6 +770,7 @@ const CUSTOM_BANDMEN = {
   },
   z16: {
     name: 'びわ湖くん',
+    region: '関西',
     img: IMG_BIWAKO,
     part: '弾き語り',
     habitat: 'びわ湖のほとり',
@@ -763,6 +779,7 @@ const CUSTOM_BANDMEN = {
   },
   z17: {
     name: 'キンタマタカフミ',
+    region: '関東',
     img: IMG_KINTAMA,
     part: '弾き語り',
     habitat: 'たこ焼き屋の行列',
@@ -771,6 +788,7 @@ const CUSTOM_BANDMEN = {
   },
   z18: {
     name: '梅田CLUB QUATTRO',
+    region: '関西',
     img: IMG_QUATTRO,
     part: 'ライブハウス',
     habitat: '大阪・梅田',
@@ -852,23 +870,41 @@ function computeBandPower(memberIds){
   const members = (memberIds||[]).map(id=>BANDMEN_BY_ID[id]).filter(Boolean);
   if(members.length === 0) return 0;
 
+  // ライブハウス枠と演奏メンバーを分ける
+  const venues  = members.filter(bm=>bm.part === 'ライブハウス');
+  const players = members.filter(bm=>bm.part !== 'ライブハウス');
+
+  // ライブハウスだけではパワーは出ない（ハコに バンドマンがいないので）
+  if(players.length === 0) return 0;
+
   // 基礎値：レア度の「平均」（合計にすると人数が多いほど有利になってしまうため）
-  const avg = members.reduce((sum,bm)=> sum + (BASE_POWER_BY_RARITY[bm.rarity]||0), 0) / members.length;
+  const avg = players.reduce((sum,bm)=> sum + (BASE_POWER_BY_RARITY[bm.rarity]||0), 0) / players.length;
 
   // 相性①：パートがかぶっていないほど良い（全員バラバラなら1.0倍、かぶるほど最大0.7倍まで低下）
-  const uniqueParts = new Set(members.map(bm=>bm.part)).size;
-  const diversityRatio = uniqueParts / members.length;
+  const uniqueParts = new Set(players.map(bm=>bm.part)).size;
+  const diversityRatio = uniqueParts / players.length;
   let synergy = 0.7 + 0.3 * diversityRatio;
 
   // 相性②：同じバンド所属どうしが2人以上いると少しボーナス（最大+10%）
   const bandCounts = {};
-  members.forEach(bm=>{
+  players.forEach(bm=>{
     const b = bm.band || 'ソロ活動';
     if(b === 'ソロ活動') return;
     bandCounts[b] = (bandCounts[b]||0) + 1;
   });
   const maxSameBand = Object.values(bandCounts).reduce((a,b)=>Math.max(a,b), 0);
   if(maxSameBand >= 2) synergy += 0.05 * Math.min(maxSameBand-1, 2);
+
+  // 相性③：ライブハウス効果。ハコが入るとバンド全体が盛り上がり（+10%）、
+  // さらにそのハコの地元（同じ地方）を拠点にするバンドマンがいると1人につき+12%（爆上がり）
+  let venueBoost = 0;
+  venues.forEach(v=>{
+    venueBoost += 0.10;
+    players.forEach(pl=>{
+      if(pl.region && v.region && pl.region === v.region) venueBoost += 0.12;
+    });
+  });
+  synergy += Math.min(venueBoost, 0.6); // ライブハウス効果は合計+60%まで
 
   const power = Math.round(avg * synergy);
   return Math.max(0, Math.min(100, power)); // 上限は常に100（人数に関係なく変わらない）
