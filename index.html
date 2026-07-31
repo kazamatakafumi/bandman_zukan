@@ -1743,6 +1743,8 @@ function isMurofesLineup(memberIds){
 const COMBO_MESSAGES = [
   { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z17'),
     msg: 'カザマが2人いる…！？' },
+  { check: m => m.some(b=>b.id==='z01') && m.some(b=>b.id==='z05'),
+    msg: 'おまえといるなら1人の方がマシ♪' },
   { check: m => isMurofesLineup(m.map(b=>b.id)),
     msg: 'ムロフェスの時はありがとう！' },
   { check: m => m.some(b=>b.id==='z17') && ['z19','z20','z21'].every(id=>m.some(b=>b.id===id)),
